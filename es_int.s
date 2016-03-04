@@ -240,6 +240,8 @@ IVR     EQU     $effc19       * vector de interrupccion de AMBAS
 
         MOVE   #0,D3
         bucPrint:
+            CMP    10(A7),D3
+            BEQ    buc2Print
             *Llamamos a ESCCAR
             MOVE.L 4(A7),A2
             MOVE.B (A2,D3),D1
@@ -247,8 +249,8 @@ IVR     EQU     $effc19       * vector de interrupccion de AMBAS
             ADD    #2,D0
             BSR    ESCCAR
             ADD    #1,D3
-            CMP    10(A7),D3
-            BNE    bucPrint
+            BRA    bucPrint
+        buc2Print:
 
         *Llamamos a LINEA
         MOVE    8(A7),D0
