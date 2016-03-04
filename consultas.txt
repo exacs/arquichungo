@@ -1,0 +1,797 @@
+Identificador de la prueba: pr44es_int
+	Entrada/Salida por interrupciones.
+	La subrutina PRINT falla cuando se escriben cuatro lineas de 100
+bytes mas el retorno de carro por la linea B, mediante cuatro llamadas a
+PRINT. Cada una de las lineas se componen por el bloque 1234567890
+(repetido 10 veces) mas el retorno de carro.
+La salida del periferico B no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto B que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0140: 0x39
+        0141: 0x30
+        0142: 0x31
+        0143: 0x32
+        0144: 0x00
+        0249: 0x36
+        0250: 0x37
+        0251: 0x38
+        0252: 0x39
+        0253: 0x00
+
+El resultado correcto deberia ser:
+	0140: 0x38
+	0141: 0x39
+	0142: 0x30
+	0143: 0x31
+	0144: 0x32
+	0249: 0x35
+	0250: 0x36
+	0251: 0x37
+	0252: 0x38
+	0253: 0x39
+
+
+Identificador de la prueba: pr45es_int
+	Entrada/Salida por interrupciones.
+	La subrutina PRINT falla cuando se escriben tres lineas de 1000
+bytes mas el retorno de carro por la linea A. Cada linea esta compuesta por
+el bloque 1234567890 (repetido 100 veces) mas el retorno de carro.
+La salida del periferico A no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto A que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        1002: 0xff
+        1003: 0xff
+        1004: 0xff
+        1005: 0xff
+        1006: 0xff
+        1007: 0xff
+        1008: 0xff
+        1009: 0xff
+        1010: 0xff
+        1011: 0xff
+
+El resultado correcto deberia ser:
+	1002: 0x0a
+	1003: 0x31
+	1004: 0x32
+	1005: 0x33
+	1006: 0x34
+	1007: 0x35
+	1008: 0x36
+	1009: 0x37
+	1010: 0x38
+	1011: 0x39
+
+
+Identificador de la prueba: pr51es_int
+	Entrada/Salida por interrupciones.
+	La subrutina PRINT falla cuando se escriben dos lineas de 500
+bytes por las lineas A y B (en sendas llamadas a PRINT). Cada
+linea esta compuesta de la secuencia 1234567890 (repetida 50 veces) mas el
+retorno de carro.
+La salida del periferico A no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto A que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0502: 0xff
+        0503: 0xff
+        0504: 0xff
+        0505: 0xff
+        0506: 0xff
+        0507: 0xff
+        0508: 0xff
+        0509: 0xff
+        0510: 0xff
+        0511: 0xff
+
+El resultado correcto deberia ser:
+	0502: 0x0a
+	0503: 0x31
+	0504: 0x32
+	0505: 0x33
+	0506: 0x34
+	0507: 0x35
+	0508: 0x36
+	0509: 0x37
+	0510: 0x38
+	0511: 0x39
+
+
+La salida del periferico B no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto B que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0502: 0xff
+        0503: 0xff
+        0504: 0xff
+        0505: 0xff
+        0506: 0xff
+        0507: 0xff
+        0508: 0xff
+        0509: 0xff
+        0510: 0xff
+        0511: 0xff
+
+El resultado correcto deberia ser:
+	0502: 0x0a
+	0503: 0x31
+	0504: 0x32
+	0505: 0x33
+	0506: 0x34
+	0507: 0x35
+	0508: 0x36
+	0509: 0x37
+	0510: 0x38
+	0511: 0x39
+
+
+Identificador de la prueba: pr52es_int
+	Entrada/Salida por interrupciones.
+	La subrutina PRINT falla cuando se escribe una linea de 1000
+bytes por las lineas A y B (en 1001 llamadas a PRINT para cada linea). Cada
+linea esta compuesta de la secuencia 1234567890 (repetida 100 veces) mas el
+retorno de carro.
+Se queda en un bucle infinito, es decir, la prueba no ha finalizado en el
+plazo estimado por el corrector. Esto puede ser debido a que la practica
+se ejecuta muy lentamente o bien que se este ejecutando un bucle
+infinito.
+
+El registro D0 contiene el numero total de caracteres leidos o escritos en la linea.
+El valor de este registro no es correcto. El que genera la prueba es
+	REGISTRO D0: 000002a6
+y el que debe generar es
+	REGISTRO D0: 000003e9.
+
+La salida del periferico A no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto A que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0001: ----
+        0002: ----
+        0003: ----
+        0004: ----
+        0005: ----
+        0006: ----
+        0007: ----
+        0008: ----
+        0009: ----
+        0010: ----
+        VACIO
+
+El resultado correcto deberia ser:
+	0001: 0x31
+	0002: 0x32
+	0003: 0x33
+	0004: 0x34
+	0005: 0x35
+	0006: 0x36
+	0007: 0x37
+	0008: 0x38
+	0009: 0x39
+	0010: 0x30
+
+
+La salida del periferico B no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto B que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0001: ----
+        0002: ----
+        0003: ----
+        0004: ----
+        0005: ----
+        0006: ----
+        0007: ----
+        0008: ----
+        0009: ----
+        0010: ----
+        VACIO
+
+El resultado correcto deberia ser:
+	0001: 0x31
+	0002: 0x32
+	0003: 0x33
+	0004: 0x34
+	0005: 0x35
+	0006: 0x36
+	0007: 0x37
+	0008: 0x38
+	0009: 0x39
+	0010: 0x30
+
+
+Identificador de la prueba: pr53es_int
+	Entrada/Salida por interrupciones.
+	La subrutina PRINT falla cuando se escribe una linea de 1999
+bytes por las lineas A y B (en 2000 llamadas a PRINT para cada linea). Cada
+linea esta compuesta de la secuencia 1234567890 (repetida 200 veces) mas el
+retorno de carro.
+Se queda en un bucle infinito, es decir, la prueba no ha finalizado en el
+plazo estimado por el corrector. Esto puede ser debido a que la practica
+se ejecuta muy lentamente o bien que se este ejecutando un bucle
+infinito.
+
+El registro D0 contiene el numero total de caracteres leidos o escritos en la linea.
+El valor de este registro no es correcto. El que genera la prueba es
+	REGISTRO D0: 00000340
+y el que debe generar es
+	REGISTRO D0: 000007d0.
+
+La salida del periferico A no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto A que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0001: ----
+        0002: ----
+        0003: ----
+        0004: ----
+        0005: ----
+        0006: ----
+        0007: ----
+        0008: ----
+        0009: ----
+        0010: ----
+        VACIO
+
+El resultado correcto deberia ser:
+	0001: 0x31
+	0002: 0x32
+	0003: 0x33
+	0004: 0x34
+	0005: 0x35
+	0006: 0x36
+	0007: 0x37
+	0008: 0x38
+	0009: 0x39
+	0010: 0x30
+
+
+La salida del periferico B no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto B que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0001: ----
+        0002: ----
+        0003: ----
+        0004: ----
+        0005: ----
+        0006: ----
+        0007: ----
+        0008: ----
+        0009: ----
+        0010: ----
+        VACIO
+
+El resultado correcto deberia ser:
+	0001: 0x31
+	0002: 0x32
+	0003: 0x33
+	0004: 0x34
+	0005: 0x35
+	0006: 0x36
+	0007: 0x37
+	0008: 0x38
+	0009: 0x39
+	0010: 0x30
+
+
+Identificador de la prueba: pr54es_int
+	Entrada/Salida por interrupciones.
+	La subrutina PRINT falla cuando se escriben dos lineas de 1500
+bytes por las lineas A y B. Cada linea esta compuesta de la secuencia
+1234567890 (repetida 150 veces) mas el retorno de carro.
+La salida del periferico A no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto A que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        1502: 0xff
+        1503: 0xff
+        1504: 0xff
+        1505: 0xff
+        1506: 0xff
+        1507: 0xff
+        1508: 0xff
+        1509: 0xff
+        1510: 0xff
+        1511: 0xff
+
+El resultado correcto deberia ser:
+	1502: 0x0a
+	1503: 0x31
+	1504: 0x32
+	1505: 0x33
+	1506: 0x34
+	1507: 0x35
+	1508: 0x36
+	1509: 0x37
+	1510: 0x38
+	1511: 0x39
+
+
+La salida del periferico B no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto B que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        1467: ----
+        1468: ----
+        1469: ----
+        1470: ----
+        1471: ----
+        1472: ----
+        1473: ----
+        1474: ----
+        1475: ----
+        1476: ----
+
+El resultado correcto deberia ser:
+	1467: 0x37
+	1468: 0x38
+	1469: 0x39
+	1470: 0x30
+	1471: 0x31
+	1472: 0x32
+	1473: 0x33
+	1474: 0x34
+	1475: 0x35
+	1476: 0x36
+
+
+Identificador de la prueba: pr55es_int
+	Entrada/Salida por interrupciones.
+	Se realiza la lectura de 3000 bytes de la linea A en lineas de
+10 bytes (nueve caracteres mas el retorno de carro). Estas lineas se
+imprimen por la linea B. Se asegura que los bufferes internos de las
+lineas A y B nunca se llenan. Las lineas que se leen se componen por
+la secuencia 123456789 mas el retorno de carro.
+Se queda en un bucle infinito, es decir, la prueba no ha finalizado en el
+plazo estimado por el corrector. Esto puede ser debido a que la practica
+se ejecuta muy lentamente o bien que se este ejecutando un bucle
+infinito.
+
+El registro D0 contiene el numero total de caracteres leidos o escritos en la linea.
+El valor de este registro no es correcto. El que genera la prueba es
+	REGISTRO D0: 00000695
+y el que debe generar es
+	REGISTRO D0: 00000bb8.
+
+A partir de la direccion 8000 (hexadecimal) se almacenan los caracteres que se leen de la linea.
+A continuacion se muestran las primeras 10 posiciones de memoria que no
+coinciden con el resultado previsto.
+El resultado obtenido es:
+	DIRECCION 00008000: 00
+	DIRECCION 00008001: 00
+	DIRECCION 00008002: 00
+	DIRECCION 00008003: 00
+	DIRECCION 00008004: 00
+	DIRECCION 00008005: 00
+	DIRECCION 00008006: 00
+	DIRECCION 00008007: 00
+	DIRECCION 00008008: 00
+	DIRECCION 00008009: 00
+El contenido correcto deberia ser:
+	DIRECCION 00008000: 31
+	DIRECCION 00008001: 32
+	DIRECCION 00008002: 33
+	DIRECCION 00008003: 34
+	DIRECCION 00008004: 35
+	DIRECCION 00008005: 36
+	DIRECCION 00008006: 37
+	DIRECCION 00008007: 38
+	DIRECCION 00008008: 39
+	DIRECCION 00008009: 0d
+
+La salida del periferico B no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto B que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0001: ----
+        0002: ----
+        0003: ----
+        0004: ----
+        0005: ----
+        0006: ----
+        0007: ----
+        0008: ----
+        0009: ----
+        0010: ----
+        VACIO
+
+El resultado correcto deberia ser:
+	0001: 0x31
+	0002: 0x32
+	0003: 0x33
+	0004: 0x34
+	0005: 0x35
+	0006: 0x36
+	0007: 0x37
+	0008: 0x38
+	0009: 0x39
+	0010: 0x0d
+
+
+Identificador de la prueba: pr56es_int
+	Entrada/Salida por interrupciones.
+	Se realiza la lectura de 3030 bytes de la linea A en lineas de
+101 bytes (100 caracteres mas el retorno de carro). Estas lineas se
+imprimen por la linea A. Se asegura que los bufferes internos de las
+lineas A y B nunca se llenan. Las lineas que se leen se componen por
+la secuencia 0123456789 repetida 10 veces mas el retorno de carro.
+Se queda en un bucle infinito, es decir, la prueba no ha finalizado en el
+plazo estimado por el corrector. Esto puede ser debido a que la practica
+se ejecuta muy lentamente o bien que se este ejecutando un bucle
+infinito.
+
+El registro D0 contiene el numero total de caracteres leidos o escritos en la linea.
+El valor de este registro no es correcto. El que genera la prueba es
+	REGISTRO D0: 0000074e
+y el que debe generar es
+	REGISTRO D0: 00000bd6.
+
+A partir de la direccion 8000 (hexadecimal) se almacenan los caracteres que se leen de la linea.
+A continuacion se muestran las primeras 10 posiciones de memoria que no
+coinciden con el resultado previsto.
+El resultado obtenido es:
+	DIRECCION 00008000: 00
+	DIRECCION 00008001: 00
+	DIRECCION 00008002: 00
+	DIRECCION 00008003: 00
+	DIRECCION 00008004: 00
+	DIRECCION 00008005: 00
+	DIRECCION 00008006: 00
+	DIRECCION 00008007: 00
+	DIRECCION 00008008: 00
+	DIRECCION 00008009: 00
+El contenido correcto deberia ser:
+	DIRECCION 00008000: 30
+	DIRECCION 00008001: 31
+	DIRECCION 00008002: 32
+	DIRECCION 00008003: 33
+	DIRECCION 00008004: 34
+	DIRECCION 00008005: 35
+	DIRECCION 00008006: 36
+	DIRECCION 00008007: 37
+	DIRECCION 00008008: 38
+	DIRECCION 00008009: 39
+
+La salida del periferico A no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto A que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0001: ----
+        0002: ----
+        0003: ----
+        0004: ----
+        0005: ----
+        0006: ----
+        0007: ----
+        0008: ----
+        0009: ----
+        0010: ----
+        VACIO
+
+El resultado correcto deberia ser:
+	0001: 0x30
+	0002: 0x31
+	0003: 0x32
+	0004: 0x33
+	0005: 0x34
+	0006: 0x35
+	0007: 0x36
+	0008: 0x37
+	0009: 0x38
+	0010: 0x39
+
+
+Identificador de la prueba: pr57es_int
+	Entrada/Salida por interrupciones.
+	Se realiza la lectura de 3006 bytes de la linea B en lineas de
+501 bytes (500 caracteres mas el retorno de carro). Estas lineas se
+imprimen por la linea A. Se asegura que los bufferes internos de las
+lineas A y B nunca se llenan. Las lineas que se leen se componen por
+la secuencia 0123456789 repetida 50 veces mas el retorno de carro.
+Se queda en un bucle infinito, es decir, la prueba no ha finalizado en el
+plazo estimado por el corrector. Esto puede ser debido a que la practica
+se ejecuta muy lentamente o bien que se este ejecutando un bucle
+infinito.
+
+El registro D0 contiene el numero total de caracteres leidos o escritos en la linea.
+El valor de este registro no es correcto. El que genera la prueba es
+	REGISTRO D0: 00000695
+y el que debe generar es
+	REGISTRO D0: 00000bbe.
+
+A partir de la direccion 8000 (hexadecimal) se almacenan los caracteres que se leen de la linea.
+A continuacion se muestran las primeras 10 posiciones de memoria que no
+coinciden con el resultado previsto.
+El resultado obtenido es:
+	DIRECCION 00008000: 00
+	DIRECCION 00008001: 00
+	DIRECCION 00008002: 00
+	DIRECCION 00008003: 00
+	DIRECCION 00008004: 00
+	DIRECCION 00008005: 00
+	DIRECCION 00008006: 00
+	DIRECCION 00008007: 00
+	DIRECCION 00008008: 00
+	DIRECCION 00008009: 00
+El contenido correcto deberia ser:
+	DIRECCION 00008000: 30
+	DIRECCION 00008001: 31
+	DIRECCION 00008002: 32
+	DIRECCION 00008003: 33
+	DIRECCION 00008004: 34
+	DIRECCION 00008005: 35
+	DIRECCION 00008006: 36
+	DIRECCION 00008007: 37
+	DIRECCION 00008008: 38
+	DIRECCION 00008009: 39
+
+La salida del periferico A no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto A que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0001: ----
+        0002: ----
+        0003: ----
+        0004: ----
+        0005: ----
+        0006: ----
+        0007: ----
+        0008: ----
+        0009: ----
+        0010: ----
+        VACIO
+
+El resultado correcto deberia ser:
+	0001: 0x30
+	0002: 0x31
+	0003: 0x32
+	0004: 0x33
+	0005: 0x34
+	0006: 0x35
+	0007: 0x36
+	0008: 0x37
+	0009: 0x38
+	0010: 0x39
+
+
+Identificador de la prueba: pr58es_int
+	Entrada/Salida por interrupciones.
+	Se realiza la lectura de 3000 bytes de la linea B en lineas de
+501 bytes (500 bytes mas el retorno de carro). Estas lineas se transmiten
+por las lineas A y B. Se asegura que los bufferes internos de las lineas
+A y B nunca se llenan. Las lineas que se leen se componen por la secuencia
+0123456789 repetida 50 veces (mas el retorno de carro).
+Se queda en un bucle infinito, es decir, la prueba no ha finalizado en el
+plazo estimado por el corrector. Esto puede ser debido a que la practica
+se ejecuta muy lentamente o bien que se este ejecutando un bucle
+infinito.
+
+El registro D0 contiene el numero total de caracteres leidos o escritos en la linea.
+El valor de este registro no es correcto. El que genera la prueba es
+	REGISTRO D0: 00000713
+y el que debe generar es
+	REGISTRO D0: 00000bbe.
+
+A partir de la direccion 8000 (hexadecimal) se almacenan los caracteres que se leen de la linea.
+A continuacion se muestran las primeras 10 posiciones de memoria que no
+coinciden con el resultado previsto.
+El resultado obtenido es:
+	DIRECCION 00008000: 00
+	DIRECCION 00008001: 00
+	DIRECCION 00008002: 00
+	DIRECCION 00008003: 00
+	DIRECCION 00008004: 00
+	DIRECCION 00008005: 00
+	DIRECCION 00008006: 00
+	DIRECCION 00008007: 00
+	DIRECCION 00008008: 00
+	DIRECCION 00008009: 00
+El contenido correcto deberia ser:
+	DIRECCION 00008000: 30
+	DIRECCION 00008001: 31
+	DIRECCION 00008002: 32
+	DIRECCION 00008003: 33
+	DIRECCION 00008004: 34
+	DIRECCION 00008005: 35
+	DIRECCION 00008006: 36
+	DIRECCION 00008007: 37
+	DIRECCION 00008008: 38
+	DIRECCION 00008009: 39
+
+La salida del periferico A no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto A que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0001: ----
+        0002: ----
+        0003: ----
+        0004: ----
+        0005: ----
+        0006: ----
+        0007: ----
+        0008: ----
+        0009: ----
+        0010: ----
+        VACIO
+
+El resultado correcto deberia ser:
+	0001: 0x30
+	0002: 0x31
+	0003: 0x32
+	0004: 0x33
+	0005: 0x34
+	0006: 0x35
+	0007: 0x36
+	0008: 0x37
+	0009: 0x38
+	0010: 0x39
+
+
+La salida del periferico B no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto B que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0001: ----
+        0002: ----
+        0003: ----
+        0004: ----
+        0005: ----
+        0006: ----
+        0007: ----
+        0008: ----
+        0009: ----
+        0010: ----
+        VACIO
+
+El resultado correcto deberia ser:
+	0001: 0x30
+	0002: 0x31
+	0003: 0x32
+	0004: 0x33
+	0005: 0x34
+	0006: 0x35
+	0007: 0x36
+	0008: 0x37
+	0009: 0x38
+	0010: 0x39
+
+
+Identificador de la prueba: pr59es_int
+	Entrada/Salida por interrupciones.
+	Se realiza la lectura de 3000 bytes de la linea A en lineas de
+1001 bytes (1000 bytes mas el retorno de carro). Estas lineas se transmiten
+por las lineas A y B. Se asegura que los bufferes internos de las lineas
+A y B nunca se llenan. Las lineas que se leen se componen por la secuencia
+0123456789 repetida 100 veces (mas el retorno de carro).
+Se queda en un bucle infinito, es decir, la prueba no ha finalizado en el
+plazo estimado por el corrector. Esto puede ser debido a que la practica
+se ejecuta muy lentamente o bien que se este ejecutando un bucle
+infinito.
+
+El registro D0 contiene el numero total de caracteres leidos o escritos en la linea.
+El valor de este registro no es correcto. El que genera la prueba es
+	REGISTRO D0: 000002ed
+y el que debe generar es
+	REGISTRO D0: 00000bbb.
+
+A partir de la direccion 8000 (hexadecimal) se almacenan los caracteres que se leen de la linea.
+A continuacion se muestran las primeras 10 posiciones de memoria que no
+coinciden con el resultado previsto.
+El resultado obtenido es:
+	DIRECCION 00008000: 00
+	DIRECCION 00008001: 00
+	DIRECCION 00008002: 00
+	DIRECCION 00008003: 00
+	DIRECCION 00008004: 00
+	DIRECCION 00008005: 00
+	DIRECCION 00008006: 00
+	DIRECCION 00008007: 00
+	DIRECCION 00008008: 00
+	DIRECCION 00008009: 00
+El contenido correcto deberia ser:
+	DIRECCION 00008000: 30
+	DIRECCION 00008001: 31
+	DIRECCION 00008002: 32
+	DIRECCION 00008003: 33
+	DIRECCION 00008004: 34
+	DIRECCION 00008005: 35
+	DIRECCION 00008006: 36
+	DIRECCION 00008007: 37
+	DIRECCION 00008008: 38
+	DIRECCION 00008009: 39
+
+La salida del periferico A no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto A que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0001: ----
+        0002: ----
+        0003: ----
+        0004: ----
+        0005: ----
+        0006: ----
+        0007: ----
+        0008: ----
+        0009: ----
+        0010: ----
+        VACIO
+
+El resultado correcto deberia ser:
+	0001: 0x30
+	0002: 0x31
+	0003: 0x32
+	0004: 0x33
+	0005: 0x34
+	0006: 0x35
+	0007: 0x36
+	0008: 0x37
+	0009: 0x38
+	0010: 0x39
+
+
+La salida del periferico B no es correcta.
+
+	A continuación se muestra un volcado hexadecimal de los 10
+primeros caracteres escritos sobre el puerto B que son diferentes al
+resultado previsto.
+El resultado obtenido es:
+        0001: ----
+        0002: ----
+        0003: ----
+        0004: ----
+        0005: ----
+        0006: ----
+        0007: ----
+        0008: ----
+        0009: ----
+        0010: ----
+        VACIO
+
+El resultado correcto deberia ser:
+	0001: 0x30
+	0002: 0x31
+	0003: 0x32
+	0004: 0x33
+	0005: 0x34
+	0006: 0x35
+	0007: 0x36
+	0008: 0x37
+	0009: 0x38
+	0010: 0x39
+
+

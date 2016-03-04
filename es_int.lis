@@ -1,0 +1,716 @@
+00000000                                     1  * Inicializa el SP y el PC
+00000000                                     2  **************************
+00000000                                     3      ORG     $0
+00000000  00008000                           4      DC.L    $8000           * Pila
+00000004  0000087C                           5      DC.L    PR26            * PC
+00000008                                     6  
+00000400                                     7      ORG     $400
+00000400                                     8  
+00000400                                     9  * Definición de equivalencias
+00000400                                    10  *********************************
+00000400                                    11  
+00000400  =00EFFC01                         12  MR1A    EQU     $effc01       * de modo A (escritura)
+00000400  =00EFFC01                         13  MR2A    EQU     $effc01       * de modo A (2º escritura)
+00000400  =00EFFC03                         14  SRA     EQU     $effc03       * de estado A (lectura)
+00000400  =00EFFC03                         15  CSRA    EQU     $effc03       * de seleccion de reloj A (escritura)
+00000400  =00EFFC05                         16  CRA     EQU     $effc05       * de control A (escritura)
+00000400  =00EFFC07                         17  TBA     EQU     $effc07       * buffer transmision A (escritura)
+00000400  =00EFFC07                         18  RBA     EQU     $effc07       * buffer recepcion A  (lectura)
+00000400                                    19  
+00000400  =00EFFC11                         20  MR1B    EQU     $effc11       * de modo B (escritura)
+00000400  =00EFFC11                         21  MR2B    EQU     $effc11       * de modo B (2º escritura)
+00000400  =00EFFC13                         22  SRB     EQU     $effc13       * de estado B (lectura)
+00000400  =00EFFC13                         23  CSRB    EQU     $effc13       * de seleccion de reloj B (escritura)
+00000400  =00EFFC15                         24  CRB     EQU     $effc15       * de control B (escritura)
+00000400  =00EFFC17                         25  TBB     EQU     $effc17       * buffer transmision B (escritura)
+00000400  =00EFFC17                         26  RBB     EQU     $effc17       * buffer recepcion B  (lectura)
+00000400                                    27  
+00000400  =00EFFC09                         28  ACR     EQU     $effc09       * de control auxiliar
+00000400  =00EFFC0B                         29  IMR     EQU     $effc0B       * de mascara de interrupcion ambas (escritura)
+00000400  =00EFFC0B                         30  ISR     EQU     $effc0B       * de estado de interrupcion de ambas (lectura)
+00000400  =00EFFC19                         31  IVR     EQU     $effc19       * vector de interrupccion de AMBAS
+00000400                                    32  
+00000400                                    33  
+00000400                                    34  * Variables globales
+00000400                                    35  **********************
+00000400                                    36  * Vector de buffers.
+00000400                                    37  *   Contiene las direcciones de inicio de los buffers internos
+00000400                                    38  V_BUFFER:
+00000400  00000000 00000000 00000000 ...    39      DC.L   0,0,0,0
+00000410                                    40  
+00000410                                    41  * Copia de IMR
+00000410                                    42  IMRCOPY:
+00000410  00                                43      DC.B 0
+00000411                                    44  
+00000411                                    45  * Variable global SALTO
+00000411                                    46  *
+00000411                                    47  * Indica si el siguiente carácter a transmitir es un salto de línea o no
+00000411                                    48  *
+00000411                                    49  * Puede tomar los valores 0 (no es un salto de línea) o 1 (sí es un salto de
+00000411                                    50  * línea) en los siguientes bits:
+00000411                                    51  *
+00000411                                    52  * Bit 0 - Línea de transmisión A
+00000411                                    53  * Bit 1 - Línea de transmisión B
+00000411                                    54  *
+00000411                                    55  * El resto de bits no se tienen en cuenta
+00000411                                    56  SALTO:
+00000411  00                                57      DC.B 0
+00000412                                    58  
+00000412                                    59  
+00000440                                    60      ORG      $440
+00000440                                    61  
+00000440                                    62  
+00000440                                    63  
+00000440                                    64  ***************************************************************************************************
+00000440                                    65  *
+00000440                                    66  * Subrutina INIT
+00000440                                    67  *
+00000440                                    68  ***************************************************************************************************
+00000440                                    69  INIT:
+00000440  13FC 0010 00EFFC05                70      MOVE.B    #%00010000,CRA      * Reinicia el puntero MR1
+00000448  13FC 0003 00EFFC01                71      MOVE.B    #%00000011,MR1A     * Solicita interrupccion por cada caracter. 8 bits por caracter
+00000450  13FC 0000 00EFFC01                72      MOVE.B    #%00000000,MR2A     * Eco desactivado.
+00000458  13FC 00CC 00EFFC03                73      MOVE.B    #%11001100,CSRA     * Velocidad = 38400 bps.
+00000460  13FC 0000 00EFFC09                74      MOVE.B    #%00000000,ACR      * Velocidad = 38400 bps.
+00000468  13FC 0005 00EFFC05                75      MOVE.B    #%00000101,CRA      * Transmision y recepcion activados.
+00000470                                    76  
+00000470  13FC 0010 00EFFC15                77      MOVE.B    #%00010000,CRB      * Reinicia el puntero MR1
+00000478  13FC 0003 00EFFC11                78      MOVE.B    #%00000011,MR1B     * Solicita interrupccion por cada caracter. 8 bits por caracter.
+00000480  13FC 0000 00EFFC11                79      MOVE.B    #%00000000,MR2B     * Eco desactivado.
+00000488  13FC 00CC 00EFFC13                80      MOVE.B    #%11001100,CSRB     * Velocidad = 38400 bps.
+00000490  13FC 0005 00EFFC15                81      MOVE.B    #%00000101,CRB      * Transmision y recepcion activados.
+00000498                                    82  
+00000498  11FC 0000 0410                    83      MOVE.B    #%00000000,IMRCOPY  * Permitir interrupción de recepción
+0000049E  13F8 0410 00EFFC0B                84      MOVE.B    IMRCOPY,IMR
+000004A6  46FC 2000                         85      MOVE.W    #$2000,SR           * Permite interrupciones
+000004AA                                    86  
+000004AA  21FC 000004EE 0100                87      MOVE.L    #RTI,$100           * 256 = 64 * 4
+000004B2  13FC 0040 00EFFC19                88      MOVE.B    #$40,IVR            * Vector de interrupcion = 64
+000004BA                                    89  
+000004BA  207C 00000400                     90      MOVE.L    #V_BUFFER,A0        * Vector de buffers internos
+000004C0                                    91  
+000004C0  20BC 00003000                     92      MOVE.L    #BUFI_0,(A0)
+000004C6  217C 000038A4 0004                93      MOVE.L    #BUFI_1,4(A0)
+000004CE  217C 00004148 0008                94      MOVE.L    #BUFI_2,8(A0)
+000004D6  217C 000049EC 000C                95      MOVE.L    #BUFI_3,12(A0)
+000004DE                                    96      
+000004DE  11FC 0022 0410                    97      MOVE.B    #%00100010,IMRCOPY  * Permitir interrupción de recepción
+000004E4  13F8 0410 00EFFC0B                98      MOVE.B    IMRCOPY,IMR
+000004EC                                    99  
+000004EC  4E75                             100      RTS
+000004EE                                   101  
+000004EE                                   102  
+000004EE                                   103  
+000004EE                                   104  
+000004EE                                   105  
+000004EE                                   106  ***************************************************************************************************
+000004EE                                   107  *
+000004EE                                   108  * Subrutina RTI
+000004EE                                   109  *
+000004EE                                   110  ***************************************************************************************************
+000004EE                                   111  
+000004EE                                   112  RTI:
+000004EE                                   113      * Guardar los registros A0,D0,D1,D2
+000004EE  2F08                             114      MOVE.L  A0,-(A7)
+000004F0  2F00                             115      MOVE.L  D0,-(A7)
+000004F2  2F01                             116      MOVE.L  D1,-(A7)
+000004F4  2F02                             117      MOVE.L  D2,-(A7)
+000004F6  2F03                             118      MOVE.L  D3,-(A7)
+000004F8  2F05                             119      MOVE.L  D5,-(A7)
+000004FA  2F06                             120      MOVE.L  D6,-(A7)
+000004FC                                   121  
+000004FC  4E56 FFF8                        122      LINK    A6,#-8
+00000500                                   123      * Variables locales
+00000500                                   124      *
+00000500                                   125      *    -8(A6).L = Dirección del registro TBA/TBB/RBA/RBB
+00000500                                   126      
+00000500                                   127      *    -4(A6).B = Máscara del IMR
+00000500                                   128      *             bit 0 = 0, inhibe Transmisión A
+00000500                                   129      *             bit 1 = 0, inhibe Recepción A
+00000500                                   130      *             bit 4 = 0, inhibe Transmisión B
+00000500                                   131      *             bit 5 = 0, inhibe Recepción B
+00000500                                   132      *
+00000500                                   133      *    -2(A6).B = descriptor de la interrupción
+00000500                                   134      *             0 = Recepción A
+00000500                                   135      *             1 = Recepción B
+00000500                                   136      *             2 = Transmision A
+00000500                                   137      *             3 = Transmisión B
+00000500                                   138      *
+00000500                                   139  
+00000500                                   140      *
+00000500  1D7C 00FF FFFC                   141      MOVE.B  #%11111111,-4(A6)    * Máscara ISR = 11111111
+00000506                                   142      
+00000506                                   143      * Paso 1.
+00000506                                   144      *   Reconocer la fuente de la interrupción y preparar las variables locales
+00000506                                   145      *
+00000506  1239 00EFFC0B                    146      MOVE.B  ISR,D1
+0000050C  C238 0410                        147      AND.B   IMRCOPY,D1
+00000510                                   148  
+00000510  0801 0000                        149      BTST    #0,D1
+00000514  6600 001A                        150      BNE     RTI_TA
+00000518                                   151  
+00000518  0801 0001                        152      BTST    #1,D1
+0000051C  6600 0042                        153      BNE     RTI_RA
+00000520                                   154  
+00000520  0801 0004                        155      BTST    #4,D1
+00000524  6600 0022                        156      BNE     RTI_TB
+00000528                                   157  
+00000528  0801 0005                        158      BTST    #5,D1
+0000052C  6600 004A                        159      BNE     RTI_RB
+00000530                                   160  
+00000530                                   161      RTI_TA:
+00000530  1D7C 0002 FFFE                   162          MOVE.B #2,-2(A6)
+00000536  2D7C 00EFFC07 FFF8               163          MOVE.L #TBA,-8(A6)
+0000053E  1D7C 00FE FFFC                   164          MOVE.B #%11111110,-4(A6)
+00000544  6000 004A                        165          BRA    RTI_2
+00000548                                   166  
+00000548                                   167      RTI_TB:
+00000548  1D7C 0003 FFFE                   168          MOVE.B #3,-2(A6)
+0000054E  2D7C 00EFFC17 FFF8               169          MOVE.L #TBB,-8(A6)
+00000556  1D7C 00EF FFFC                   170          MOVE.B #%11101111,-4(A6)
+0000055C  6000 0032                        171          BRA    RTI_2
+00000560                                   172  
+00000560                                   173      RTI_RA:
+00000560  1D7C 0000 FFFE                   174          MOVE.B #0,-2(A6)
+00000566  2D7C 00EFFC07 FFF8               175          MOVE.L #RBA,-8(A6)
+0000056E  1D7C 00FD FFFC                   176          MOVE.B #%11111101,-4(A6)
+00000574  6000 001A                        177          BRA    RTI_2
+00000578                                   178  
+00000578                                   179      RTI_RB:
+00000578  1D7C 0001 FFFE                   180          MOVE.B #1,-2(A6)
+0000057E  2D7C 00EFFC17 FFF8               181          MOVE.L #RBB,-8(A6)
+00000586  1D7C 00DF FFFC                   182          MOVE.B #%11011111,-4(A6)
+0000058C  6000 0002                        183          BRA    RTI_2
+00000590                                   184  
+00000590                                   185      * Paso 2.
+00000590                                   186      *   Dirigir a Recepción o Transmisión
+00000590                                   187      RTI_2:
+00000590  082E 0001 FFFE                   188          BTST   #1,-2(A6)
+00000596  6600 0006                        189          BNE    RTI_2T
+0000059A  6700 006A                        190          BEQ    RTI_2R
+0000059E                                   191  
+0000059E                                   192  
+0000059E                                   193      * Paso 2-Transmisión
+0000059E                                   194      *   Copia en D0 el carácter que se debe transmitir por la línea
+0000059E                                   195      *
+0000059E                                   196      *   Si salto==true, se copia "\n"
+0000059E                                   197      *   eoc, se copia el primer carácter del Buffer Interno
+0000059E                                   198      RTI_2T:
+0000059E  7C00                             199      MOVE.L  #0,D6
+000005A0  1C2E FFFE                        200      MOVE.B  -2(A6),D6
+000005A4  0838 0001 0411                   201      BTST.B  #1,SALTO
+000005AA  6600 0034                        202      BNE     RTI_2TNS
+000005AE                                   203  
+000005AE                                   204      * SALTO==true
+000005AE                                   205      * Paso 2-Transmisión-A
+000005AE                                   206      * 
+000005AE                                   207      * Copia en D0 "\n" e inhibe la transmisión si no hay más líneas
+000005AE                                   208      RTI_2TS:
+000005AE                                   209          * Salto = false
+000005AE  7C00                             210          MOVE.L  #0,D6
+000005B0  1C2E FFFE                        211          MOVE.B  -2(A6),D6
+000005B4  0DB8 0411                        212          BCLR.B  D6,SALTO
+000005B8                                   213  
+000005B8  1A3C 000A                        214          MOVE.B  #10,D5           * Transmitir salto de línea
+000005BC                                   215  
+000005BC                                   216          * Llamar a LINEA
+000005BC  102E FFFE                        217          MOVE.B  -2(A6),D0        * LINEA.Descriptor = -2(A6)
+000005C0  6100 01EA                        218          BSR     LINEA
+000005C4  B07C 0000                        219          CMP.W   #0,D0
+000005C8  6600 0032                        220          BNE     RTI_3T
+000005CC                                   221  
+000005CC                                   222          * IMR = IMR & MáscaraIMR
+000005CC  122E FFFC                        223          MOVE.B  -4(A6),D1        * D1 = MáscaraIMR
+000005D0  C338 0410                        224          AND.B   D1,IMRCOPY       * IMRCOPY = IMR & MáscaraIMR
+000005D4  13F8 0410 00EFFC0B               225          MOVE.B  IMRCOPY,IMR      * IMR = IMR & MáscaraIMR
+000005DC  6000 001E                        226          BRA     RTI_3T
+000005E0                                   227  
+000005E0                                   228      * SALTO==false.
+000005E0                                   229      * Paso 2-Transmisión-B
+000005E0                                   230      * 
+000005E0                                   231      * Copia en D0 el carácter que haya en el buffer interno
+000005E0                                   232      * Si el carácter es un \r, poner SALTO=true
+000005E0                                   233      RTI_2TNS:
+000005E0  102E FFFE                        234          MOVE.B  -2(A6),D0   * Parámetro Buffer (Interno)
+000005E4  6100 0136                        235          BSR     LEECAR
+000005E8  1A00                             236          MOVE.B  D0,D5
+000005EA  B03C 000D                        237          CMP.B   #13,D0
+000005EE  6600 000C                        238          BNE     RTI_3T
+000005F2                                   239  
+000005F2                                   240          * Poner salto = true
+000005F2  7C00                             241          MOVE.L  #0,D6
+000005F4  1C2E FFFE                        242          MOVE.B  -2(A6),D6
+000005F8  0DF8 0411                        243          BSET.B  D6,SALTO
+000005FC                                   244  
+000005FC                                   245      * Paso 3-Transmisión
+000005FC                                   246      *   Copia el valor de D0 al vector de transmisión
+000005FC                                   247      RTI_3T:
+000005FC  206E FFF8                        248          MOVE.L  -8(A6),A0
+00000600  1085                             249          MOVE.B  D5,(A0)
+00000602                                   250          
+00000602  6000 0010                        251          BRA     RTI_END
+00000606                                   252  
+00000606                                   253  
+00000606                                   254  
+00000606                                   255      * Paso 2-Recepción
+00000606                                   256      *   Copia RBA/RBB al buffer interno correspondiente
+00000606                                   257      *   llamando a la subrutina ESCCAR
+00000606                                   258      RTI_2R:
+00000606  102E FFFE                        259          MOVE.B  -2(A6),D0  * Parámetro Buffer (Interno)
+0000060A  206E FFF8                        260          MOVE.L  -8(A6),A0  * RBA/RBB
+0000060E  1210                             261          MOVE.B  (A0),D1    * Parámetro Caracter
+00000610                                   262          
+00000610  6100 0150                        263          BSR     ESCCAR
+00000614                                   264      
+00000614                                   265      
+00000614                                   266      RTI_END:
+00000614  4E5E                             267          UNLK    A6
+00000616                                   268  
+00000616  2C1F                             269          MOVE.L  (A7)+,D6
+00000618  2A1F                             270          MOVE.L  (A7)+,D5
+0000061A  261F                             271          MOVE.L  (A7)+,D3
+0000061C  241F                             272          MOVE.L  (A7)+,D2
+0000061E  221F                             273          MOVE.L  (A7)+,D1
+00000620  201F                             274          MOVE.L  (A7)+,D0
+00000622  205F                             275          MOVE.L  (A7)+,A0
+00000624  4E73                             276          RTE
+00000626                                   277  
+00000626                                   278  
+00000626                                   279  
+00000626                                   280  ***************************************************************************************************
+00000626                                   281  *
+00000626                                   282  * Subrutina PRINT
+00000626                                   283  *
+00000626                                   284  ***************************************************************************************************
+00000626                                   285  * Parámetros
+00000626                                   286  *   8(A6).L   Buffer
+00000626                                   287  *   12(A6).W   Descriptor
+00000626                                   288  *   14(A6).W  Tamaño
+00000626                                   289  *
+00000626                                   290  PRINT:
+00000626  4E56 FFFC                        291      LINK    A6,#-4
+0000062A                                   292      * Variables locales
+0000062A                                   293      *   -4(A6).B    MáscaraIMR
+0000062A                                   294      *   -2(A6).W    i
+0000062A                                   295      *
+0000062A  7600                             296      MOVE.L  #0,D3
+0000062C                                   297  
+0000062C                                   298  
+0000062C                                   299      * 1. Copiar el mensaje correspondiente al Buffer Interno de Transmisión A o B
+0000062C                                   300  
+0000062C                                   301      * 1.1. Comprobar que el Descriptor es válido
+0000062C  0C6E 0002 000C                   302      CMP.W   #2,12(A6)
+00000632  6C00 0088                        303      BGE     PRI_ERR          * Si  Descriptor>=2, error
+00000636                                   304  
+00000636                                   305      * 1.2. Copiar cada carácter llamando a ESCCAR
+00000636  3D7C 0000 FFFE                   306      MOVE.W  #0,-2(A6) * i = 0
+0000063C                                   307  
+0000063C                                   308      PRI_BUC:
+0000063C                                   309      * while(i != Tamaño)
+0000063C  342E FFFE                        310      MOVE.W  -2(A6),D2
+00000640  362E 000E                        311      MOVE.W  14(A6),D3
+00000644  B46E 000E                        312      CMP.W   14(A6),D2
+00000648                                   313  
+00000648  6700 0026                        314      BEQ     PRI_2
+0000064C                                   315  
+0000064C                                   316          * ESCCAR
+0000064C  302E 000C                        317          MOVE.W  12(A6),D0
+00000650  5440                             318          ADD.W   #2,D0        * ESCCAR.Descriptor = PRINT.Descriptor + 2
+00000652  206E 0008                        319          MOVE.L  8(A6),A0
+00000656  342E FFFE                        320          MOVE.W  -2(A6),D2
+0000065A  1230 2000                        321          MOVE.B  (A0,D2),D1   * ESCCAR.Caracter = M(Buffer + i)
+0000065E  6100 0102                        322          BSR     ESCCAR
+00000662                                   323  
+00000662                                   324          * Si (buffer lleno) => salir
+00000662  B07C FFFF                        325          CMP.W   #-1,D0
+00000666  6700 0008                        326          BEQ     PRI_2
+0000066A                                   327  
+0000066A                                   328          * i++
+0000066A  526E FFFE                        329          ADD.W   #1,-2(A6)
+0000066E  60CC                             330          BRA     PRI_BUC
+00000670                                   331  
+00000670                                   332  
+00000670                                   333      * 2. Si existe una línea completa en el buffer interno A o B,
+00000670                                   334      *    permitir interrupciones
+00000670                                   335      PRI_2:
+00000670                                   336  
+00000670                                   337      * LINEA
+00000670  302E 000C                        338      MOVE.W  12(A6),D0
+00000674  5480                             339      ADD.L   #2,D0     * LINEA.Descriptor = PRINT.Descriptor + 2
+00000676  6100 0134                        340      BSR     LINEA
+0000067A                                   341  
+0000067A                                   342      * Si D0 == 0, saltar al paso 4
+0000067A  B07C 0000                        343      CMP.W   #0,D0
+0000067E  6700 0034                        344      BEQ     PRI_4
+00000682                                   345  
+00000682                                   346      * Crear la máscara que permita una interrupción
+00000682  0C6E 0000 000C                   347      CMP.W   #0,12(A6)
+00000688                                   348  
+00000688  6700 0006                        349      BEQ     PRI_2A
+0000068C  6000 000C                        350      BRA     PRI_2B
+00000690                                   351  
+00000690                                   352      PRI_2A:
+00000690  1D7C 0001 FFFC                   353          MOVE.B  #%00000001,-4(A6)
+00000696  6000 000C                        354          BRA     PRI_3
+0000069A                                   355      PRI_2B:
+0000069A  1D7C 0010 FFFC                   356          MOVE.B  #%00010000,-4(A6)
+000006A0  6000 0002                        357          BRA     PRI_3
+000006A4                                   358  
+000006A4                                   359      * 3. IMR = IMR | MáscaraIMR
+000006A4                                   360      PRI_3:
+000006A4  122E FFFC                        361          MOVE.B  -4(A6),D1
+000006A8  8338 0410                        362          OR.B    D1,IMRCOPY
+000006AC  13F8 0410 00EFFC0B               363          MOVE.B  IMRCOPY,IMR
+000006B4                                   364  
+000006B4                                   365      * 3. Retornar i
+000006B4                                   366      PRI_4:
+000006B4  302E FFFE                        367          MOVE.W  -2(A6),D0
+000006B8  6000 0008                        368          BRA     PRI_END
+000006BC                                   369  
+000006BC                                   370      PRI_ERR:
+000006BC  70FF                             371          MOVE.L  #-1,D0
+000006BE  6000 0002                        372          BRA     PRI_END
+000006C2                                   373  
+000006C2                                   374      PRI_END:
+000006C2  4E5E                             375      UNLK    A6
+000006C4  4E75                             376      RTS
+000006C6                                   377  
+000006C6                                   378  
+000006C6                                   379  
+000006C6                                   380  ***************************************************************************************************
+000006C6                                   381  *
+000006C6                                   382  * Subrutina SCAN
+000006C6                                   383  *
+000006C6                                   384  ***************************************************************************************************
+000006C6                                   385  
+000006C6                                   386  SCAN:
+000006C6                                   387      * Parámetros
+000006C6                                   388      * Buffer (4 bytes)
+000006C6                                   389      * Descriptor (2 bytes)
+000006C6                                   390      * Tamaño (2 bytes)
+000006C6  4E56 FFF8                        391      LINK    A6,#-8
+000006CA                                   392      * Variables locales
+000006CA                                   393      * -4(A6)  i  - Contador de caracteres de la línea (maximo)
+000006CA                                   394      * -8(A6)  j  - incrementador
+000006CA                                   395      
+000006CA                                   396      * 1. Identificar el buffer interno (parámetro Descriptor)
+000006CA  302E 000C                        397      MOVE.W  12(A6),D0
+000006CE  B07C 0001                        398      CMP.W   #1,D0
+000006D2  6E00 0044                        399      BGT     SCAN_ERR
+000006D6                                   400      
+000006D6                                   401      * 2. Comprobar que hay una línea completa
+000006D6  6100 00D4                        402      BSR     LINEA
+000006DA  2D40 FFFC                        403      MOVE.L  D0,-4(A6)
+000006DE  2D7C 00000000 FFF8               404      MOVE.L  #0,-8(A6)
+000006E6                                   405  
+000006E6                                   406      
+000006E6                                   407      SCAN_BUC:
+000006E6                                   408      * while (i!=0)
+000006E6  0CAE 00000000 FFFC               409      CMP.L   #0,-4(A6)     
+000006EE  6700 0020                        410      BEQ     SCAN_OK
+000006F2                                   411          
+000006F2  302E 000C                        412          MOVE.W  12(A6),D0
+000006F6  6100 0024                        413          BSR     LEECAR
+000006FA                                   414          * D0 vale el carácter. Copiar en el buffer
+000006FA  206E 0008                        415          MOVE.L  8(A6),A0
+000006FE  242E FFF8                        416          MOVE.L  -8(A6),D2
+00000702  1180 2000                        417          MOVE.B  D0,(A0,D2)
+00000706                                   418          
+00000706                                   419          * i--
+00000706  53AE FFFC                        420          SUB.L   #1,-4(A6)
+0000070A  52AE FFF8                        421          ADD.L   #1,-8(A6)
+0000070E  60D6                             422          BRA     SCAN_BUC
+00000710                                   423  
+00000710                                   424      SCAN_OK:
+00000710  202E FFF8                        425          MOVE.L -8(A6),D0
+00000714                                   426      
+00000714                                   427      SCAN_FIN:
+00000714  4E5E                             428          UNLK   A6
+00000716  4E75                             429          RTS
+00000718                                   430  
+00000718                                   431      SCAN_ERR:
+00000718  70FF                             432          MOVE.L #-1,D0
+0000071A  60F8                             433          BRA    SCAN_FIN
+0000071C                                   434      
+0000071C                                   435      
+0000071C                                   436  
+0000071C                                   437  ***************************************************************************************************
+0000071C                                   438  *
+0000071C                                   439  * Subrutina LEECAR
+0000071C                                   440  *
+0000071C                                   441  ***************************************************************************************************
+0000071C                                   442  
+0000071C                                   443  LEECAR:
+0000071C  46FC 7000                        444      MOVE.W  #$7000,SR        * Inhibe interrupciones
+00000720                                   445  
+00000720                                   446      *                        * 1. Leer el vector de buffers para conocer
+00000720                                   447      *                        *    la dirección de inicio del buffer seleccionado
+00000720                                   448      *                        *
+00000720  207C 00000400                    449      MOVE.L  #V_BUFFER,A0     * A0 = V_BUFFER
+00000726  C0BC 00000003                    450      AND.L   #3,D0            * Máscara de 2 bits
+0000072C  E580                             451      ASL.L   #2,D0            * D0 = Buffer * 4
+0000072E  2070 0000                        452      MOVE.L  (A0,D0),A0       * A0 = [V_BUFFER + Buffer * 4]
+00000732                                   453  
+00000732                                   454      *                        * 2. Si el buffer está vacío, D0=-1 y salir
+00000732                                   455      *                        * 
+00000732  0C68 0000 0002                   456      CMP.W   #0,2(A0)         * [A0+2] == 0   significa que está vacío
+00000738  6600 000A                        457      BNE     L_novacio        *
+0000073C  70FF                             458          MOVE.L  #-1,D0       * D0 = -1
+0000073E  46FC 2000                        459          MOVE.W  #$2000,SR        * Permite interrupciones
+00000742  4E75                             460          RTS                  * salir
+00000744                                   461      
+00000744                                   462      L_novacio:
+00000744                                   463  
+00000744                                   464      *                        * 3. Obtener el primer carácter del buffer (A0+principio+4)
+00000744  3010                             465      MOVE.W  (A0),D0          * D0 = principio = [A0]
+00000746  1030 0004                        466      MOVE.B  4(A0,D0),D0      * D0 = [A0+4+principio]
+0000074A                                   467      * EXT.L   D0
+0000074A                                   468  
+0000074A  5250                             469      ADD.W   #1,(A0)          * 4. incrementar inicio, decrementar longitud en uso
+0000074C  5368 0002                        470      SUB.W   #1,2(A0)
+00000750                                   471  
+00000750  0C50 07D0                        472      CMP.W   #2000,(A0)       * 5. Comprobar que "inicio" se encuentra entre 0 y 2000
+00000754  6D00 0006                        473      BLT     L_nomod
+00000758  30BC 0000                        474          MOVE.W  #0,(A0)
+0000075C                                   475      L_nomod:
+0000075C                                   476  
+0000075C  46FC 2000                        477      MOVE.W  #$2000,SR        * Permite interrupciones
+00000760  4E75                             478      RTS
+00000762                                   479  
+00000762                                   480  
+00000762                                   481  
+00000762                                   482  ***************************************************************************************************
+00000762                                   483  *
+00000762                                   484  * Subrutina ESCCAR
+00000762                                   485  *
+00000762                                   486  ***************************************************************************************************
+00000762                                   487  *
+00000762                                   488  *  Parámetros
+00000762                                   489  *    D0: Buffer. 2 bytes.
+00000762                                   490  *        Buffer Interno en el que copiar el carácter
+00000762                                   491  *
+00000762                                   492  *    D1: Carácter
+00000762                                   493  *        Carácter que se debe copiar
+00000762                                   494  *
+00000762                                   495  ESCCAR:
+00000762  46FC 7000                        496      MOVE.W  #$7000,SR        * Inhibe interrupciones
+00000766                                   497      *
+00000766                                   498      *
+00000766                                   499      *
+00000766  207C 00000400                    500      MOVE.L  #V_BUFFER,A0
+0000076C  C0BC 00000003                    501      AND.L   #3,D0            * Máscara de 2 bits
+00000772  E580                             502      ASL.L   #2,D0
+00000774  2070 0000                        503      MOVE.L  (A0,D0),A0
+00000778                                   504  
+00000778  0C68 07D0 0002                   505      CMP.W   #2000,2(A0)
+0000077E  6600 000A                        506      BNE     E_nolleno
+00000782  70FF                             507          MOVE.L #-1,D0
+00000784  46FC 2000                        508          MOVE.W  #$2000,SR        * Permite interrupciones
+00000788  4E75                             509          RTS
+0000078A                                   510  
+0000078A                                   511      E_nolleno:
+0000078A                                   512  
+0000078A  3410                             513      MOVE    (A0),D2      * A0 + 4 + (inicio+nElementos)%2000
+0000078C  D468 0002                        514      ADD     2(A0),D2     * D2 = inicio + nElementos
+00000790  B47C 07D0                        515      CMP.W   #2000,D2
+00000794  6D00 0006                        516      BLT     E_nomod
+00000798  0442 07D0                        517          SUB  #2000,D2
+0000079C                                   518                           * D2 = (inicio + nElementos) % 2000
+0000079C                                   519      E_nomod:
+0000079C  1181 2004                        520      MOVE.B  D1,4(A0,D2)
+000007A0                                   521  
+000007A0  5268 0002                        522      ADD.W   #1,2(A0)
+000007A4                                   523  
+000007A4  7000                             524      MOVE.L  #0,D0
+000007A6                                   525  
+000007A6  46FC 2000                        526      MOVE.W  #$2000,SR        * Permite interrupciones
+000007AA  4E75                             527      RTS
+000007AC                                   528  
+000007AC                                   529  
+000007AC                                   530  
+000007AC                                   531  ***************************************************************************************************
+000007AC                                   532  *
+000007AC                                   533  * Subrutina LINEA
+000007AC                                   534  *
+000007AC                                   535  ***************************************************************************************************
+000007AC                                   536  
+000007AC                                   537  LINEA:
+000007AC                                   538      *                        * 1. Leer el vector de buffers para conocer
+000007AC                                   539      *                        *    la dirección de inicio del buffer seleccionado
+000007AC                                   540      *                        *
+000007AC  207C 00000400                    541      MOVE.L  #V_BUFFER,A0     * A0 = V_BUFFER
+000007B2  C0BC 00000003                    542      AND.L   #3,D0            * Máscara de 2 bits
+000007B8  E580                             543      ASL.L   #2,D0            * D0 = Buffer * 4
+000007BA  2070 0000                        544      MOVE.L  (A0,D0),A0       * A0 = [V_BUFFER + Buffer * 4]
+000007BE                                   545  
+000007BE                                   546      *                        * 2. Inicializamos contador
+000007BE  7000                             547      MOVE.L  #0,D0            * i = 0
+000007C0                                   548  
+000007C0  3210                             549      MOVE.W  (A0),D1          * D1 = principio
+000007C2  3428 0002                        550      MOVE.W  2(A0),D2         * D2 = nElementos
+000007C6                                   551  
+000007C6  B47C 0000                        552      CMP.W   #0,D2            * Si nElementos=0 => salir
+000007CA  6700 002E                        553      BEQ     LN_exit
+000007CE                                   554  
+000007CE                                   555      * MOVE.W  4(A0,D1),A1      * A1 = buffer[principio]
+000007CE                                   556  
+000007CE                                   557      bucle:
+000007CE  2601                             558          MOVE.L  D1,D3            * j = principio
+000007D0  D680                             559          ADD.L   D0,D3            * j = principio + i
+000007D2  B67C 07D0                        560          CMP     #2000,D3         
+000007D6  6D00 0008                        561          BLT     LN_nomod
+000007DA  0483 000007D0                    562              SUB.L  #2000,D3
+000007E0                                   563  
+000007E0                                   564          LN_nomod:                 * j = (principio + i) % 2000
+000007E0  1830 3004                        565          MOVE.B  4(A0,D3),D4       * A1 = buffer[j]
+000007E4  B83C 000D                        566          CMP.B   #13,D4            *
+000007E8  6700 000E                        567          BEQ     LN_sumuno         * Si A1==13 => sumar 1 y salir
+000007EC                                   568  
+000007EC  5240                             569          ADD.W   #1,D0             * 
+000007EE  B042                             570          CMP.W   D2,D0             * Si i==nElementos => fin del bucle (no encontrado)
+000007F0  66DC                             571      BNE     bucle
+000007F2                                   572  
+000007F2                                   573  
+000007F2  7000                             574      MOVE.L  #0,D0
+000007F4  6000 0004                        575      BRA     LN_exit
+000007F8                                   576  
+000007F8                                   577      LN_sumuno:
+000007F8  5280                             578      ADD.L   #1,D0                * Suma 1 por el carácter 13
+000007FA                                   579  
+000007FA                                   580      LN_exit:
+000007FA  4E75                             581      RTS
+000007FC                                   582  
+000007FC                                   583      
+000007FC                                   584  PR21:
+000007FC  6100 FC42                        585      BSR     INIT
+00000800  7001                             586      MOVE.L  #1,D0
+00000802  123C 0060                        587      MOVE.B  #$60,D1
+00000806  6100 FF5A                        588      BSR     ESCCAR
+0000080A                                   589  
+0000080A                                   590      
+0000080A                                   591      
+0000080A                                   592  PR22:
+0000080A  6100 FC34                        593      BSR INIT
+0000080E  4848                             594      BREAK
+00000810                                   595      * Llamar a ESCCAR 1500 veces
+00000810                                   596      * Insertando hexadecimales 30,31,32,33,34,35,36,37,38,39 un total de 150 veces
+00000810  2E3C 00000096                    597      MOVE.L  #150,D7       * Contador de 1 a 150
+00000816                                   598      PR22_1i:
+00000816  7230                             599          MOVE.L #$30,D1    * Contador de 30 a 39
+00000818                                   600                            * Carácter a insertar
+00000818                                   601          
+00000818                                   602          PR22_1j:
+00000818  7001                             603              MOVE.L #1,D0  * Parámetro Descriptor
+0000081A  6100 FF46                        604              BSR    ESCCAR
+0000081E  5201                             605              ADD.B  #1,D1
+00000820  B27C 003A                        606              CMP    #$3a,D1
+00000824  66F2                             607              BNE    PR22_1j
+00000826                                   608          
+00000826  5387                             609          SUB.L  #1,D7
+00000828  BEBC 00000000                    610          CMP.L  #0,D7
+0000082E  66E6                             611          BNE    PR22_1i
+00000830                                   612      
+00000830  4848                             613      BREAK
+00000832                                   614      
+00000832                                   615      * Llamar a LEECAR 1500 veces
+00000832  2E3C 000005DC                    616      MOVE.L  #1500,D7       * Contador de 1 a 1500
+00000838                                   617      PR22_2i:
+00000838  7001                             618          MOVE.L #1,D0
+0000083A  6100 FEE0                        619          BSR    LEECAR
+0000083E                                   620          
+0000083E  5387                             621          SUB.L  #1,D7
+00000840  BEBC 00000000                    622          CMP.L  #0,D7
+00000846  66F0                             623          BNE    PR22_2i
+00000848                                   624          
+00000848  4848                             625      BREAK
+0000084A                                   626      
+0000084A                                   627      * Llamar a ESCCAR 1000 veces
+0000084A                                   628      * Insertando hexadecimales 30,31,32,33,34,35,36,37,38,39 un total de 100 veces
+0000084A  7E64                             629      MOVE.L  #100,D7       * Contador de 1 a 100
+0000084C                                   630      PR22_3i:
+0000084C  7230                             631          MOVE.L #$30,D1    * Contador de 30 a 39
+0000084E                                   632                            * Carácter a insertar
+0000084E                                   633          
+0000084E                                   634          PR22_3j:
+0000084E  7001                             635              MOVE.L #1,D0  * Parámetro Descriptor
+00000850  6100 FF10                        636              BSR    ESCCAR
+00000854  5201                             637              ADD.B  #1,D1
+00000856  B27C 003A                        638              CMP    #$3a,D1
+0000085A  66F2                             639              BNE    PR22_3j
+0000085C                                   640          
+0000085C  5387                             641          SUB.L  #1,D7
+0000085E  BEBC 00000000                    642          CMP.L  #0,D7
+00000864  66E6                             643          BNE    PR22_3i
+00000866                                   644      
+00000866  4848                             645      BREAK
+00000868                                   646      * Insertar salto de línea
+00000868  7001                             647      MOVE.L  #1,D0
+0000086A  123C 000D                        648      MOVE.B  #13,D1
+0000086E  6100 FEF2                        649      BSR     ESCCAR
+00000872                                   650      
+00000872  4848                             651      BREAK
+00000874                                   652      * Llamar a línea
+00000874  7001                             653      MOVE.L  #1,D0
+00000876  6100 FF34                        654      BSR     LINEA
+0000087A                                   655      
+0000087A  4848                             656      BREAK
+0000087C                                   657  
+0000087C                                   658  
+0000087C                                   659  PR26:
+0000087C  6100 FBC2                        660      BSR INIT
+00000880                                   661      PR26_B:
+00000880  0C38 0022 0410                   662          CMP.B  #%00100010,IMRCOPY
+00000886  66F8                             663          BNE    PR26_B
+00000888                                   664      
+00000888                                   665      * Aquí ha terminado de interrumpir
+00000888  4848                             666      BREAK   
+0000088A                                   667      
+0000088A  3F3C 0015                        668      MOVE.W #21,-(A7)    * Tamaño = 21 (incl. \r)
+0000088E  3F3C 0001                        669      MOVE.W #1,-(A7)     * Recepción por B
+00000892  2F3C 00008000                    670      MOVE.L #$8000,-(A7) * Se copiará a partir de la dirección 8000
+00000898  6100 FE2C                        671      BSR    SCAN
+0000089C                                   672      
+0000089C  508F                             673      ADD.L  #8,A7
+0000089E                                   674      
+0000089E  4848                             675      BREAK
+000008A0                                   676      ***********************************************************
+000008A0                                   677  
+000008A0                                   678  BUFFER: DS.B    2000   * Buffer para escritura y lectura de caracteres
+00001070  0000                             679  CONTL:  DC.W    0      * Contador de lineas
+00001072  0000                             680  CONTC:  DC.W    0      * Contador de caracteres
+00001074  00000000                         681  DIRLEC: DC.L    0      * Direccion de lectura para SCAN
+00001078  00000000                         682  DIRESC: DC.L    0      * Direccion de lectura para PRINT
+0000107C  00000000                         683  TAME:   DC.L    0      * Tamano de escritura para print
+00001080  =00000000                        684  DESA:   EQU     0      * Descriptor linea A
+00001080  =00000001                        685  DESB:   EQU     1      * Descriptor linea B
+00001080  =0000000A                        686  NLIN:   EQU     10     * Numero de lineas a leer
+00001080  =0000001E                        687  TAML:   EQU     30     * Tamano de linea para SCAN
+00001080  =00000005                        688  TAMB:   EQU     5      * Tamano de bloque para PRINT
+00001080                                   689  
+00001080                                   690  
+00001080                                   691  * Heap de memoria
+00001080                                   692  
+00003000                                   693      ORG    $3000
+00003000                                   694  
+00003000                                   695  BUFI_0:
+00003000  0000 0000                        696      DC.W   0,0      * Campos inicio y longitud en uso
+00003004                                   697      DS.B   BUFFER   * Array con el buffer
+000038A4                                   698  
+000038A4                                   699  
+000038A4                                   700  BUFI_1:
+000038A4  0000 0000                        701      DC.W   0,0      * Campos inicio y longitud en uso
+000038A8                                   702      DS.B   BUFFER   * Array con el buffer
+00004148                                   703  
+00004148                                   704      
+00004148                                   705  BUFI_2:
+00004148  0000 0000                        706      DC.W   0,0      * Campos inicio y longitud en uso
+0000414C                                   707      DS.B   BUFFER   * Array con el buffer
+000049EC                                   708  
+000049EC                                   709  
+000049EC                                   710  BUFI_3:
+000049EC  0000 0000                        711      DC.W   0,0      * Campos inicio y longitud en uso
+000049F0                                   712      DS.B   BUFFER   * Array con el buffer
+00005290                                   713  
+
+No errors detected
+No warnings generated
