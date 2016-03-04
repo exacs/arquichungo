@@ -1,13 +1,13 @@
-* Inicializa el SP y el PC
-**************************
     ORG     $0
     DC.L    $8000           * Pila
-    DC.L    PR26            * PC
-
+    DC.L    INICIO          * PC
+    
+********************************************************************************
+*   REGIÓN DE TEXTO
+********************************************************************************
     ORG     $400
-
-* Definición de equivalencias
-*********************************
+    
+TAMANYO EQU     2000          * Buffer para escritura y lectura de caracteres
 
 MR1A    EQU     $effc01       * de modo A (escritura)
 MR2A    EQU     $effc01       * de modo A (2º escritura)
@@ -29,653 +29,407 @@ ACR     EQU     $effc09       * de control auxiliar
 IMR     EQU     $effc0B       * de mascara de interrupcion ambas (escritura)
 ISR     EQU     $effc0B       * de estado de interrupcion de ambas (lectura)
 IVR     EQU     $effc19       * vector de interrupccion de AMBAS
-
-
-* Variables globales
-**********************
-* Vector de buffers.
-*   Contiene las direcciones de inicio de los buffers internos
-V_BUFFER:
-    DC.L   0,0,0,0
-
-* Copia de IMR
-IMRCOPY:
-    DC.B 0
-
-* Variable global SALTO
-*
-* Indica si el siguiente carácter a transmitir es un salto de línea o no
-*
-* Puede tomar los valores 0 (no es un salto de línea) o 1 (sí es un salto de
-* línea) en los siguientes bits:
-*
-* Bit 0 - Línea de transmisión A
-* Bit 1 - Línea de transmisión B
-*
-* El resto de bits no se tienen en cuenta
-SALTO:
-    DC.B 0
-
-
-    ORG      $440
-
-
-
-***************************************************************************************************
-*
-* Subrutina INIT
-*
-***************************************************************************************************
-INIT:
-    MOVE.B    #%00010000,CRA      * Reinicia el puntero MR1
-    MOVE.B    #%00000011,MR1A     * Solicita interrupccion por cada caracter. 8 bits por caracter
-    MOVE.B    #%00000000,MR2A     * Eco desactivado.
-    MOVE.B    #%11001100,CSRA     * Velocidad = 38400 bps.
-    MOVE.B    #%00000000,ACR      * Velocidad = 38400 bps.
-    MOVE.B    #%00000101,CRA      * Transmision y recepcion activados.
-
-    MOVE.B    #%00010000,CRB      * Reinicia el puntero MR1
-    MOVE.B    #%00000011,MR1B     * Solicita interrupccion por cada caracter. 8 bits por caracter.
-    MOVE.B    #%00000000,MR2B     * Eco desactivado.
-    MOVE.B    #%11001100,CSRB     * Velocidad = 38400 bps.
-    MOVE.B    #%00000101,CRB      * Transmision y recepcion activados.
-
-    MOVE.B    #%00000000,IMRCOPY  * Permitir interrupción de recepción
-    MOVE.B    IMRCOPY,IMR
-    MOVE.W    #$2000,SR           * Permite interrupciones
-
-    MOVE.L    #RTI,$100           * 256 = 64 * 4
-    MOVE.B    #$40,IVR            * Vector de interrupcion = 64
-
-    MOVE.L    #V_BUFFER,A0        * Vector de buffers internos
-
-    MOVE.L    #BUFI_0,(A0)
-    MOVE.L    #BUFI_1,4(A0)
-    MOVE.L    #BUFI_2,8(A0)
-    MOVE.L    #BUFI_3,12(A0)
     
-    MOVE.B    #%00100010,IMRCOPY  * Permitir interrupción de recepción
-    MOVE.B    IMRCOPY,IMR
+    INIT:
+        MOVE.L    #V,A0        * Vector de buffers internos
 
-    RTS
+        MOVE.L    #V0,(A0)
+        MOVE.L    #V1,4(A0)
+        MOVE.L    #V2,8(A0)
+        MOVE.L    #V3,12(A0)
+        
+        * Preparación de periféricos
+        MOVE.B    #%00010000,CRA      * Reinicia el puntero MR1
+        MOVE.B    #%00000011,MR1A     * Solicita interrupccion por cada caracter. 8 bits por caracter
+        MOVE.B    #%00000000,MR2A     * Eco desactivado.
+        MOVE.B    #%11001100,CSRA     * Velocidad = 38400 bps.
+        MOVE.B    #%00000000,ACR      * Velocidad = 38400 bps.
+        MOVE.B    #%00000101,CRA      * Transmision y recepcion activados.
 
+        MOVE.B    #%00010000,CRB      * Reinicia el puntero MR1
+        MOVE.B    #%00000011,MR1B     * Solicita interrupccion por cada caracter. 8 bits por caracter.
+        MOVE.B    #%00000000,MR2B     * Eco desactivado.
+        MOVE.B    #%11001100,CSRB     * Velocidad = 38400 bps.
+        MOVE.B    #%00000101,CRB      * Transmision y recepcion activados.
 
+        MOVE.B    #%00100010,IMRCOPY  * Permitir interrupción de recepción
+        MOVE.B    IMRCOPY,IMR
 
+        MOVE.L    #RTI,$100           * 256 = 64 * 4
+        MOVE.B    #$40,IVR            * Vector de interrupcion = 64
+        
+        * MOVE.W    #$2000,SR           * Permite interrupciones
+        RTS
 
-
-***************************************************************************************************
-*
-* Subrutina RTI
-*
-***************************************************************************************************
-
-RTI:
-    * Guardar los registros A0,D0,D1,D2
-    MOVE.L  A0,-(A7)
-    MOVE.L  D0,-(A7)
-    MOVE.L  D1,-(A7)
-    MOVE.L  D2,-(A7)
-    MOVE.L  D3,-(A7)
-    MOVE.L  D5,-(A7)
-    MOVE.L  D6,-(A7)
-
-    LINK    A6,#-8
-    * Variables locales
-    *
-    *    -8(A6).L = Dirección del registro TBA/TBB/RBA/RBB
+*******************************************************************************
     
-    *    -4(A6).B = Máscara del IMR
-    *             bit 0 = 0, inhibe Transmisión A
-    *             bit 1 = 0, inhibe Recepción A
-    *             bit 4 = 0, inhibe Transmisión B
-    *             bit 5 = 0, inhibe Recepción B
-    *
-    *    -2(A6).B = descriptor de la interrupción
-    *             0 = Recepción A
-    *             1 = Recepción B
-    *             2 = Transmision A
-    *             3 = Transmisión B
-    *
+    LEECAR:
+        * Selección de buffer
+        AND.L   #$3,D0
+        ASL.L   #2,D0
+        MOVE.L  #V,A0
+        MOVE.L  (A0,D0),A0
+                
+        *Comprobación de buffer vacío
+        CMP     #0,4(A0)
+        BEQ     b_vacio
+        
+        MOVE    (A0),D1
+        MOVE.B  8(A0,D1),D0
+        
+        *Actualización de variables
+        MOVE    SR,D7                                  * Sección crítica
+        MOVE    #$2700,SR                              *
+        ADD     #1,(A0)                                *
+        SUB     #1,4(A0)                               *
+                                                       *
+        *Comprobamos que inicio no se pasa de 2000     *
+        CMP     #2000,(A0)                             *
+        BLT     modLee                                 *
+        SUB     #2000,(A0)                             *
+                                                       *
+        modLee:                                        *
+        MOVE    D7,SR                                  * Fin sección crítica
+        RTS
+        
+        b_vacio:
+            MOVE.L  #-1,D0
+            RTS
 
-    *
-    MOVE.B  #%11111111,-4(A6)    * Máscara ISR = 11111111
+*******************************************************************************
+
+    ESCCAR:
+        * Selección de buffer
+        AND.L   #$3,D0
+        ASL.L   #2,D0
+        MOVE    #V,A0
+        MOVE.L  (A0,D0),A0
+        
+        * Comprobación de buffer lleno
+        CMP     #2000,4(A0)
+        BEQ     b_lleno
+
+        MOVE    2(A0),D2
+        MOVE.B  D1,8(A0,D2)
+        
+        * Actualización de variables
+        MOVE    SR,D7                                  * Sección crítica
+        MOVE    #$2700,SR                              *
+        ADD     #1,2(A0)                               *
+        ADD     #1,4(A0)                               *
+                                                       *
+        *Comprobamos que fin no se pasa de 2000        *
+        CMP     #2000,2(A0)                            *
+        BLT     modEsc                                 *
+        SUB     #2000,2(A0)                            *
+                                                       *
+        modEsc:                                        *
+        MOVE    D7,SR                                  * Fin sección crítica
+        RTS
+
+        b_lleno:
+            MOVE.L  #-1,D0
+            RTS
+        
+*******************************************************************************
+        
+    LINEA:        
+        * Selección de buffer
+        ASL.L   #2,D0       * D0 * 4 -> D0
+        MOVE.L  #V,A0       * V -> A0
+        MOVE.L  (A0,D0),A0  * M(V+D0*4) -> A0
+
+        *Comprobación de buffer vacío
+        CMP     #0,4(A0)
+        BEQ     vacLin
+        MOVE    (A0),D1
+        
+        *Inicializamos D0,D1,D2
+        MOVE.L  #0,D0
+        MOVE    SR,D7                                  * Sección crítica
+        MOVE    #$2700,SR                              *
+        MOVE    (A0),D1                                *
+        MOVE    4(A0),D2                               *
+                                                       *
+        bucLin:                                        *
+            ADD     #1,D0                              *
+            CMP.B   #$0d,8(A0,D1)                      *
+            BEQ     encLin                             *
+            ADD     #1,D1                              *
+            SUB     #1,D2                              *
+            *Comprobamos que inicio no se pasa de 2000 *
+            CMP     #2000,D1                           *
+            BLT     modLin                             *
+            MOVE    #0,D1                              *
+                                                       *
+            modLin:                                    *
+            CMP     #0,D2                              *
+            BNE     bucLin                             *
+                                                       *
+        MOVE.L  #0,D0                                  *
+                                                       *
+        encLin:                                        *
+            MOVE    D7,SR                              * Fin sección crítica
+            BRA     endLin
+        
+        vacLin:
+            MOVE.L  #0,D0
+            BRA     endLin
     
-    * Paso 1.
-    *   Reconocer la fuente de la interrupción y preparar las variables locales
-    *
-    MOVE.B  ISR,D1
-    AND.B   IMRCOPY,D1
+        endLin:
+            RTS
 
-    BTST    #0,D1
-    BNE     RTI_TA
+*******************************************************************************
 
-    BTST    #1,D1
-    BNE     RTI_RA
+    SCAN:
+        *Comprobación de parámetros
+        CMP.L  #0,4(A7)
+        BLT    errScan     * Si Buffer < 0, error
+        CMP.W  #0,8(A7)
+        BLT    errScan     * Si Descriptor < 0, error
+        CMP.W  #1,8(A7)
+        BGT    errScan     * Si Descriptor > 1, error
+        CMP    #0,10(A7)
+        BLT    errScan     * Si Tamaño < 0, error
+        
+        *Llamamos a línea
+        MOVE.L #0,D0
+        MOVE   8(A7),D0
+        BSR    LINEA
 
-    BTST    #4,D1
-    BNE     RTI_TB
+        *Comprobamos si es una linea de tamaño valido
+        MOVE     10(A7),D4
+        CMP      #0,D0
+        BEQ      vacScan     * Si D0 = 0, salir
+        CMP      10(A7),D0
+        BGT      vacScan     * Si D0 > Tamaño, salir
+        MOVE.L   #0,D3
+        MOVE     D0,D2
+        bucScan:
+            *Llamamos a LEECAR
+            MOVE    8(A7),D0
+            BSR     LEECAR
+            MOVE.L  4(A7),A2
+            MOVE.B  D0,(A2,D3)
+            ADD     #1,D3
+            CMP     D3,D2
+            BNE     bucScan
+        MOVE    D2,D0
+        RTS
 
-    BTST    #5,D1
-    BNE     RTI_RB
+        errScan:
+            MOVE.L #-1,D0
+            RTS
 
-    RTI_TA:
-        MOVE.B #2,-2(A6)
-        MOVE.L #TBA,-8(A6)
-        MOVE.B #%11111110,-4(A6)
-        BRA    RTI_2
+        vacScan:
+            MOVE #0,D0
+            RTS
 
-    RTI_TB:
-        MOVE.B #3,-2(A6)
-        MOVE.L #TBB,-8(A6)
-        MOVE.B #%11101111,-4(A6)
-        BRA    RTI_2
+*******************************************************************************
 
-    RTI_RA:
-        MOVE.B #0,-2(A6)
-        MOVE.L #RBA,-8(A6)
-        MOVE.B #%11111101,-4(A6)
-        BRA    RTI_2
+    PRINT:
+        *Comprobación de párametros
+        CMP.L  #0,4(A7)
+        BLT    errPrint      * Si Buffer < 0, error
+        CMP    #0,8(A7)
+        BLT    errPrint      * Si Descriptor < 0, error
+        CMP    #1,8(A7)
+        BGT    errPrint      * Si Descriptor > 1, error
+        CMP    #0,10(A7)
+        BLT    errPrint      * Si Tamaño < 0, error
 
-    RTI_RB:
-        MOVE.B #1,-2(A6)
-        MOVE.L #RBB,-8(A6)
-        MOVE.B #%11011111,-4(A6)
-        BRA    RTI_2
+        MOVE   #0,D3
+        bucPrint:
+            *Llamamos a ESCCAR
+            MOVE.L 4(A7),A2
+            MOVE.B (A2,D3),D1
+            MOVE   8(A7),D0
+            ADD    #2,D0
+            BSR    ESCCAR
+            ADD    #1,D3
+            CMP    10(A7),D3
+            BNE    bucPrint
 
-    * Paso 2.
-    *   Dirigir a Recepción o Transmisión
-    RTI_2:
-        BTST   #1,-2(A6)
-        BNE    RTI_2T
-        BEQ    RTI_2R
-
-
-    * Paso 2-Transmisión
-    *   Copia en D0 el carácter que se debe transmitir por la línea
-    *
-    *   Si salto==true, se copia "\n"
-    *   eoc, se copia el primer carácter del Buffer Interno
-    RTI_2T:
-    MOVE.L  #0,D6
-    MOVE.B  -2(A6),D6
-    BTST.B  #1,SALTO
-    BNE     RTI_2TNS
-
-    * SALTO==true
-    * Paso 2-Transmisión-A
-    * 
-    * Copia en D0 "\n" e inhibe la transmisión si no hay más líneas
-    RTI_2TS:
-        * Salto = false
-        MOVE.L  #0,D6
-        MOVE.B  -2(A6),D6
-        BCLR.B  D6,SALTO
-
-        MOVE.B  #10,D5           * Transmitir salto de línea
-
-        * Llamar a LINEA
-        MOVE.B  -2(A6),D0        * LINEA.Descriptor = -2(A6)
+        *Llamamos a LINEA
+        MOVE    8(A7),D0
+        ADD     #2,D0
         BSR     LINEA
-        CMP.W   #0,D0
-        BNE     RTI_3T
-
-        * IMR = IMR & MáscaraIMR
-        MOVE.B  -4(A6),D1        * D1 = MáscaraIMR
-        AND.B   D1,IMRCOPY       * IMRCOPY = IMR & MáscaraIMR
-        MOVE.B  IMRCOPY,IMR      * IMR = IMR & MáscaraIMR
-        BRA     RTI_3T
-
-    * SALTO==false.
-    * Paso 2-Transmisión-B
-    * 
-    * Copia en D0 el carácter que haya en el buffer interno
-    * Si el carácter es un \r, poner SALTO=true
-    RTI_2TNS:
-        MOVE.B  -2(A6),D0   * Parámetro Buffer (Interno)
-        BSR     LEECAR
-        MOVE.B  D0,D5
-        CMP.B   #13,D0
-        BNE     RTI_3T
-
-        * Poner salto = true
-        MOVE.L  #0,D6
-        MOVE.B  -2(A6),D6
-        BSET.B  D6,SALTO
-
-    * Paso 3-Transmisión
-    *   Copia el valor de D0 al vector de transmisión
-    RTI_3T:
-        MOVE.L  -8(A6),A0
-        MOVE.B  D5,(A0)
         
-        BRA     RTI_END
-
-
-
-    * Paso 2-Recepción
-    *   Copia RBA/RBB al buffer interno correspondiente
-    *   llamando a la subrutina ESCCAR
-    RTI_2R:
-        MOVE.B  -2(A6),D0  * Parámetro Buffer (Interno)
-        MOVE.L  -8(A6),A0  * RBA/RBB
-        MOVE.B  (A0),D1    * Parámetro Caracter
-        
-        BSR     ESCCAR
-    
-    
-    RTI_END:
-        UNLK    A6
-
-        MOVE.L  (A7)+,D6
-        MOVE.L  (A7)+,D5
-        MOVE.L  (A7)+,D3
-        MOVE.L  (A7)+,D2
-        MOVE.L  (A7)+,D1
-        MOVE.L  (A7)+,D0
-        MOVE.L  (A7)+,A0
-        RTE
-
-
-
-***************************************************************************************************
-*
-* Subrutina PRINT
-*
-***************************************************************************************************
-* Parámetros
-*   8(A6).L   Buffer
-*   12(A6).W   Descriptor
-*   14(A6).W  Tamaño
-*
-PRINT:
-    LINK    A6,#-4
-    * Variables locales
-    *   -4(A6).B    MáscaraIMR
-    *   -2(A6).W    i
-    *
-    MOVE.L  #0,D3
-
-
-    * 1. Copiar el mensaje correspondiente al Buffer Interno de Transmisión A o B
-
-    * 1.1. Comprobar que el Descriptor es válido
-    CMP.W   #2,12(A6)
-    BGE     PRI_ERR          * Si  Descriptor>=2, error
-
-    * 1.2. Copiar cada carácter llamando a ESCCAR
-    MOVE.W  #0,-2(A6) * i = 0
-
-    PRI_BUC:
-    * while(i != Tamaño)
-    MOVE.W  -2(A6),D2
-    MOVE.W  14(A6),D3
-    CMP.W   14(A6),D2
-
-    BEQ     PRI_2
-
-        * ESCCAR
-        MOVE.W  12(A6),D0
-        ADD.W   #2,D0        * ESCCAR.Descriptor = PRINT.Descriptor + 2
-        MOVE.L  8(A6),A0
-        MOVE.W  -2(A6),D2
-        MOVE.B  (A0,D2),D1   * ESCCAR.Caracter = M(Buffer + i)
-        BSR     ESCCAR
-
-        * Si (buffer lleno) => salir
-        CMP.W   #-1,D0
-        BEQ     PRI_2
-
-        * i++
-        ADD.W   #1,-2(A6)
-        BRA     PRI_BUC
-
-
-    * 2. Si existe una línea completa en el buffer interno A o B,
-    *    permitir interrupciones
-    PRI_2:
-
-    * LINEA
-    MOVE.W  12(A6),D0
-    ADD.L   #2,D0     * LINEA.Descriptor = PRINT.Descriptor + 2
-    BSR     LINEA
-
-    * Si D0 == 0, saltar al paso 4
-    CMP.W   #0,D0
-    BEQ     PRI_4
-
-    * Crear la máscara que permita una interrupción
-    CMP.W   #0,12(A6)
-
-    BEQ     PRI_2A
-    BRA     PRI_2B
-
-    PRI_2A:
-        MOVE.B  #%00000001,-4(A6)
-        BRA     PRI_3
-    PRI_2B:
-        MOVE.B  #%00010000,-4(A6)
-        BRA     PRI_3
-
-    * 3. IMR = IMR | MáscaraIMR
-    PRI_3:
-        MOVE.B  -4(A6),D1
-        OR.B    D1,IMRCOPY
+        *Si hay linea se permiten transmisiones
+        CMP     #0,D0
+        BLE     noLinPrint
+        MOVE    8(A7),D4
+        MULU    #4,D4
+        BSET    D4,IMRCOPY
         MOVE.B  IMRCOPY,IMR
 
-    * 3. Retornar i
-    PRI_4:
-        MOVE.W  -2(A6),D0
-        BRA     PRI_END
 
-    PRI_ERR:
-        MOVE.L  #-1,D0
-        BRA     PRI_END
+        noLinPrint:
+            MOVE    D3,D0
+            RTS
 
-    PRI_END:
-    UNLK    A6
-    RTS
+        errPrint:
+            MOVE.L #-1,D0
+            RTS
 
-
-
-***************************************************************************************************
-*
-* Subrutina SCAN
-*
-***************************************************************************************************
-
-SCAN:
-    * Parámetros
-    * Buffer (4 bytes)
-    * Descriptor (2 bytes)
-    * Tamaño (2 bytes)
-    LINK    A6,#-8
-    * Variables locales
-    * -4(A6)  i  - Contador de caracteres de la línea (maximo)
-    * -8(A6)  j  - incrementador
-    
-    * 1. Identificar el buffer interno (parámetro Descriptor)
-    MOVE.W  12(A6),D0
-    CMP.W   #1,D0
-    BGT     SCAN_ERR
-    
-    * 2. Comprobar que hay una línea completa
-    BSR     LINEA
-    MOVE.L  D0,-4(A6)
-    MOVE.L  #0,-8(A6)
-
-    
-    SCAN_BUC:
-    * while (i!=0)
-    CMP.L   #0,-4(A6)     
-    BEQ     SCAN_OK
-        
-        MOVE.W  12(A6),D0
-        BSR     LEECAR
-        * D0 vale el carácter. Copiar en el buffer
-        MOVE.L  8(A6),A0
-        MOVE.L  -8(A6),D2
-        MOVE.B  D0,(A0,D2)
-        
-        * i--
-        SUB.L   #1,-4(A6)
-        ADD.L   #1,-8(A6)
-        BRA     SCAN_BUC
-
-    SCAN_OK:
-        MOVE.L -8(A6),D0
-    
-    SCAN_FIN:
-        UNLK   A6
-        RTS
-
-    SCAN_ERR:
-        MOVE.L #-1,D0
-        BRA    SCAN_FIN
-    
-    
-
-***************************************************************************************************
-*
-* Subrutina LEECAR
-*
-***************************************************************************************************
-
-LEECAR:
-    MOVE.W  #$7000,SR        * Inhibe interrupciones
-
-    *                        * 1. Leer el vector de buffers para conocer
-    *                        *    la dirección de inicio del buffer seleccionado
-    *                        *
-    MOVE.L  #V_BUFFER,A0     * A0 = V_BUFFER
-    AND.L   #3,D0            * Máscara de 2 bits
-    ASL.L   #2,D0            * D0 = Buffer * 4
-    MOVE.L  (A0,D0),A0       * A0 = [V_BUFFER + Buffer * 4]
-
-    *                        * 2. Si el buffer está vacío, D0=-1 y salir
-    *                        * 
-    CMP.W   #0,2(A0)         * [A0+2] == 0   significa que está vacío
-    BNE     L_novacio        *
-        MOVE.L  #-1,D0       * D0 = -1
-        MOVE.W  #$2000,SR        * Permite interrupciones
-        RTS                  * salir
-    
-    L_novacio:
-
-    *                        * 3. Obtener el primer carácter del buffer (A0+principio+4)
-    MOVE.W  (A0),D0          * D0 = principio = [A0]
-    MOVE.B  4(A0,D0),D0      * D0 = [A0+4+principio]
-    * EXT.L   D0
-
-    ADD.W   #1,(A0)          * 4. incrementar inicio, decrementar longitud en uso
-    SUB.W   #1,2(A0)
-
-    CMP.W   #2000,(A0)       * 5. Comprobar que "inicio" se encuentra entre 0 y 2000
-    BLT     L_nomod
-        MOVE.W  #0,(A0)
-    L_nomod:
-
-    MOVE.W  #$2000,SR        * Permite interrupciones
-    RTS
+*******************************************************************************
+    RTI:
+        MOVE.L  A0,-(A7)
+        MOVE.L  A1,-(A7)
+        MOVE.L  A2,-(A7)
+        MOVE.L  A3,-(A7)
+        MOVE.L  A4,-(A7)
+        MOVE.L  A5,-(A7)
+        MOVE.L  A6,-(A7)
+        MOVE.L  D0,-(A7)
+        MOVE.L  D1,-(A7)
+        MOVE.L  D2,-(A7)
+        MOVE.L  D3,-(A7)
+        MOVE.L  D4,-(A7)
+        MOVE.L  D5,-(A7)
+        MOVE.L  D6,-(A7)
+        MOVE.L  D7,-(A7)
 
 
+        * Identificar fuente de interrupción
+        MOVE.B  ISR,D5
+        AND.B   IMRCOPY,D5
 
-***************************************************************************************************
-*
-* Subrutina ESCCAR
-*
-***************************************************************************************************
-*
-*  Parámetros
-*    D0: Buffer. 2 bytes.
-*        Buffer Interno en el que copiar el carácter
-*
-*    D1: Carácter
-*        Carácter que se debe copiar
-*
-ESCCAR:
-    MOVE.W  #$7000,SR        * Inhibe interrupciones
-    *
-    *
-    *
-    MOVE.L  #V_BUFFER,A0
-    AND.L   #3,D0            * Máscara de 2 bits
-    ASL.L   #2,D0
-    MOVE.L  (A0,D0),A0
+        BTST    #1,D5
+        BNE     rA_RTI
+        BTST    #5,D5
+        BNE     rB_RTI
 
-    CMP.W   #2000,2(A0)
-    BNE     E_nolleno
-        MOVE.L #-1,D0
-        MOVE.W  #$2000,SR        * Permite interrupciones
-        RTS
+        BTST    #0,D5
+        BNE     tA_RTI
+        BTST    #4,D5
+        BNE     tB_RTI
 
-    E_nolleno:
+        rA_RTI:
+            MOVE   #0,D0
+            MOVE.B RBA,D1
+            BRA    recRTI
 
-    MOVE    (A0),D2      * A0 + 4 + (inicio+nElementos)%2000
-    ADD     2(A0),D2     * D2 = inicio + nElementos
-    CMP.W   #2000,D2
-    BLT     E_nomod
-        SUB  #2000,D2
-                         * D2 = (inicio + nElementos) % 2000
-    E_nomod:
-    MOVE.B  D1,4(A0,D2)
+        rB_RTI:
+            MOVE   #1,D0
+            MOVE.B RBB,D1
+            BRA    recRTI
 
-    ADD.W   #1,2(A0)
-
-    MOVE.L  #0,D0
-
-    MOVE.W  #$2000,SR        * Permite interrupciones
-    RTS
-
-
-
-***************************************************************************************************
-*
-* Subrutina LINEA
-*
-***************************************************************************************************
-
-LINEA:
-    *                        * 1. Leer el vector de buffers para conocer
-    *                        *    la dirección de inicio del buffer seleccionado
-    *                        *
-    MOVE.L  #V_BUFFER,A0     * A0 = V_BUFFER
-    AND.L   #3,D0            * Máscara de 2 bits
-    ASL.L   #2,D0            * D0 = Buffer * 4
-    MOVE.L  (A0,D0),A0       * A0 = [V_BUFFER + Buffer * 4]
-
-    *                        * 2. Inicializamos contador
-    MOVE.L  #0,D0            * i = 0
-
-    MOVE.W  (A0),D1          * D1 = principio
-    MOVE.W  2(A0),D2         * D2 = nElementos
-
-    CMP.W   #0,D2            * Si nElementos=0 => salir
-    BEQ     LN_exit
-
-    * MOVE.W  4(A0,D1),A1      * A1 = buffer[principio]
-
-    bucle:
-        MOVE.L  D1,D3            * j = principio
-        ADD.L   D0,D3            * j = principio + i
-        CMP     #2000,D3         
-        BLT     LN_nomod
-            SUB.L  #2000,D3
-
-        LN_nomod:                 * j = (principio + i) % 2000
-        MOVE.B  4(A0,D3),D4       * A1 = buffer[j]
-        CMP.B   #13,D4            *
-        BEQ     LN_sumuno         * Si A1==13 => sumar 1 y salir
-
-        ADD.W   #1,D0             * 
-        CMP.W   D2,D0             * Si i==nElementos => fin del bucle (no encontrado)
-    BNE     bucle
-
-
-    MOVE.L  #0,D0
-    BRA     LN_exit
-
-    LN_sumuno:
-    ADD.L   #1,D0                * Suma 1 por el carácter 13
-
-    LN_exit:
-    RTS
-
-    
-PR21:
-    BSR     INIT
-    MOVE.L  #1,D0
-    MOVE.B  #$60,D1
-    BSR     ESCCAR
-
-    
-    
-PR22:
-    BSR INIT
-    BREAK
-    * Llamar a ESCCAR 1500 veces
-    * Insertando hexadecimales 30,31,32,33,34,35,36,37,38,39 un total de 150 veces
-    MOVE.L  #150,D7       * Contador de 1 a 150
-    PR22_1i:
-        MOVE.L #$30,D1    * Contador de 30 a 39
-                          * Carácter a insertar
-        
-        PR22_1j:
-            MOVE.L #1,D0  * Parámetro Descriptor
+        recRTI:
             BSR    ESCCAR
-            ADD.B  #1,D1
-            CMP    #$3a,D1
-            BNE    PR22_1j
-        
-        SUB.L  #1,D7
-        CMP.L  #0,D7
-        BNE    PR22_1i
-    
-    BREAK
-    
-    * Llamar a LEECAR 1500 veces
-    MOVE.L  #1500,D7       * Contador de 1 a 1500
-    PR22_2i:
-        MOVE.L #1,D0
-        BSR    LEECAR
-        
-        SUB.L  #1,D7
-        CMP.L  #0,D7
-        BNE    PR22_2i
-        
-    BREAK
-    
-    * Llamar a ESCCAR 1000 veces
-    * Insertando hexadecimales 30,31,32,33,34,35,36,37,38,39 un total de 100 veces
-    MOVE.L  #100,D7       * Contador de 1 a 100
-    PR22_3i:
-        MOVE.L #$30,D1    * Contador de 30 a 39
-                          * Carácter a insertar
-        
-        PR22_3j:
-            MOVE.L #1,D0  * Parámetro Descriptor
-            BSR    ESCCAR
-            ADD.B  #1,D1
-            CMP    #$3a,D1
-            BNE    PR22_3j
-        
-        SUB.L  #1,D7
-        CMP.L  #0,D7
-        BNE    PR22_3i
-    
-    BREAK
-    * Insertar salto de línea
-    MOVE.L  #1,D0
-    MOVE.B  #13,D1
-    BSR     ESCCAR
-    
-    BREAK
-    * Llamar a línea
-    MOVE.L  #1,D0
-    BSR     LINEA
-    
-    BREAK
+            BRA    endRTI
+
+        tA_RTI:
+            MOVE.L #V,A2     * A2 = V
+            MOVE.L 8(A2),A2  * A2 = M(V+4*2)
+
+            CMP    #1,6(A2)
+            BNE    tA_no10_RTI   * Si VARIABLEUNIVERSAL = 0, no enviar #10
+            
+            * Enviar #10 por línea de transmision A
+            MOVE.B #10,TBA
+            MOVE   #0,6(A2)
+            
+            * Comprobar si hay más líneas
+            MOVE.L #2,D0
+            BSR    LINEA
+
+            CMP    #0,D0
+            BNE    endRTI      * Si LINEA no retorna 0, hay líneas, no inhibir
+            BCLR   #0,IMRCOPY
+            MOVE.B IMRCOPY,IMR
+            BRA    endRTI
+
+            * No enviar #10 por línea de transmision A
+            tA_no10_RTI:
+                MOVE   #2,D0
+                BSR    LEECAR
+                MOVE.B D0,TBA
+                CMP    #13,D0
+                BNE    endRTI
+                MOVE   #1,6(A2) *
+                BRA    endRTI
 
 
-PR26:
-    BSR INIT
-    PR26_B:
-        CMP.B  #%00100010,IMRCOPY
-        BNE    PR26_B
-    
-    * Aquí ha terminado de interrumpir
-    BREAK   
-    
-    MOVE.W #21,-(A7)    * Tamaño = 21 (incl. \r)
-    MOVE.W #1,-(A7)     * Recepción por B
-    MOVE.L #$8000,-(A7) * Se copiará a partir de la dirección 8000
-    BSR    SCAN
-    
-    ADD.L  #8,A7
-    
-    BREAK
-    ***********************************************************
 
-BUFFER: DS.B    2000   * Buffer para escritura y lectura de caracteres
+
+        tB_RTI:
+            MOVE.L #V,A2       * A2 = V
+            MOVE.L 12(A2),A2   * A2 = M(V+4*3)
+
+            CMP    #1,6(A2)
+            BNE    tB_no10_RTI * Si VARIABLEUNIVERSAL = 0, no enviar #10
+            
+            * Enviar #10 por línea de transmision B
+            MOVE.B #10,TBB
+            MOVE   #0,6(A2)
+
+            * Comprobar si hay más líneas
+            MOVE.L #3,D0
+            BSR    LINEA
+
+            CMP    #0,D0
+            BNE    endRTI      * Si LINEA no retorna 0, hay líneas, no inhibir
+
+            BCLR   #4,IMRCOPY
+            MOVE.B IMRCOPY,IMR
+            BRA    endRTI
+
+            * No enviar #10 por línea de transmision B
+            tB_no10_RTI:
+                MOVE   #3,D0   * Leer del Buffer Interno #3 (transmisión B)
+                BSR    LEECAR
+                MOVE.B D0,TBB  * D0 -> TBB. Transmitir
+                CMP    #13,D0  * Si D0=13, VARIABLEUNIVERSAL = 1
+                BNE    endRTI
+                MOVE   #1,6(A2)
+                BRA    endRTI
+            
+        endRTI:
+            MOVE.L  (A7)+,D7
+            MOVE.L  (A7)+,D6
+            MOVE.L  (A7)+,D5
+            MOVE.L  (A7)+,D4
+            MOVE.L  (A7)+,D3
+            MOVE.L  (A7)+,D2
+            MOVE.L  (A7)+,D1
+            MOVE.L  (A7)+,D0
+            MOVE.L  (A7)+,A6
+            MOVE.L  (A7)+,A5
+            MOVE.L  (A7)+,A4
+            MOVE.L  (A7)+,A3
+            MOVE.L  (A7)+,A2
+            MOVE.L  (A7)+,A1
+            MOVE.L  (A7)+,A0
+
+            RTE
+
+*******************************************************************************
+*   REGIÓN DE VARIABLES GLOBALES
+********************************************************************************
+    V:      DC.L   0,0,0,0
+    IMRCOPY:DC.B   0
+
+********************************************************************************
+*   REGIÓN DE HEAP
+********************************************************************************
+    ORG     $1000
+    
+    V0:     DC.W   0,0,0,0
+            DS.B   TAMANYO
+    V1:     DC.W   0,0,0,0
+            DS.B   TAMANYO
+    V2:     DC.W   0,0,0,0
+            DS.B   TAMANYO
+    V3:     DC.W   0,0,0,0
+            DS.B   TAMANYO
+
+********************************************************************************
+*   REGIÓN DE PRUEBAS
+********************************************************************************
+    ORG     $4000
+
+BUFFER: DS.B    2100   * Buffer para escritura y lectura de caracteres
 CONTL:  DC.W    0      * Contador de lineas
 CONTC:  DC.W    0      * Contador de caracteres
 DIRLEC: DC.L    0      * Direccion de lectura para SCAN
@@ -683,33 +437,83 @@ DIRESC: DC.L    0      * Direccion de lectura para PRINT
 TAME:   DC.L    0      * Tamano de escritura para print
 DESA:   EQU     0      * Descriptor linea A
 DESB:   EQU     1      * Descriptor linea B
-NLIN:   EQU     10     * Numero de lineas a leer
-TAML:   EQU     30     * Tamano de linea para SCAN
+
+NLIN:   EQU     15     * Numero de lineas a leer
+TAML:   EQU     100    * Tamano de linea para SCAN
 TAMB:   EQU     5      * Tamano de bloque para PRINT
-
-TAMBUFF:EQU     2000   * Tamano del buffer
-
-
-* Heap de memoria
-
-    ORG    $3000
-
-BUFI_0:
-    DC.W   0,0      * Campos inicio y longitud en uso
-    DS.B   TAMBUFF  * Array con el buffer
-
-
-BUFI_1:
-    DC.W   0,0      * Campos inicio y longitud en uso
-    DS.B   TAMBUFF  * Array con el buffer
-
     
-BUFI_2:
-    DC.W   0,0      * Campos inicio y longitud en uso
-    DS.B   TAMBUFF  * Array con el buffer
+    
+INICIO: * Manejadores de excepciones
+    MOVE.L  #BUS_ERROR,8     * Bus error handler
+    MOVE.L  #ADDRESS_ER,12   * Address error handler
+    MOVE.L  #ILLEGAL_IN,16   * Illegal instruction handler
+    MOVE.L  #PRIV_VIOLT,32   * Privilege Violation handler
 
+    BSR     INIT
+    MOVE.W  #$2000,SR        * Permite interrupciones
 
-BUFI_3:
-    DC.W   0,0      * Campos inicio y longitud en uso
-    DS.B   TAMBUFF  * Array con el buffer
+BUCPR:
+    MOVE.W  #0,CONTC         * Inicializa contador de caracteres
+    MOVE.W  #NLIN,CONTL      * Inicializa contador de lineas
+    MOVE.L  #BUFFER,DIRLEC   * Direccion de lectura = comienzo del buffer
+
+OTRAL:
+    MOVE.W  #TAML,-(A7)      * Tamano maximo de la linea
+    MOVE.W  #DESA,-(A7)      * Puerto A
+    MOVE.L  DIRLEC,-(A7)     * Direccion de lectura
+
+ESPL:
+    BSR     SCAN
+    CMP.L   #0,D0
+    BEQ     ESPL             * Si no se ha leido la linea, se intenta de nuevo
+    ADD.L   #8,A7            * Reestablece la pila
+    ADD.L   D0,DIRLEC        * Calcula la nueva direccion de lectura
+    ADD.W   D0,CONTC         * Actualiza el contador de caracteres
+
+    SUB.W   #1,CONTL         * Actualiza el numero de lineas leidas.
+    BNE     OTRAL            * Si no se han leido todas, se vuelve a leer
+
+    MOVE.L  #BUFFER,DIRLEC   * DIreccion de lectura = comienzo del buffer
+
+OTRAE:
+    MOVE.W  #TAMB,TAME       * Tamano de escritura = tamano de bloque
+
+ESPE:
+    MOVE.W  TAME,-(A7)       * Tamano de escritura
+        MOVE.W  #DESA,-(A7)      * Puerto B
+        MOVE.L  DIRLEC,-(A7)     * Direccion de lectura
+    * BREAK
+    BSR     PRINT
+    ADD.L   #8,A7            * Reestablece la pila
+    ADD.L   D0,DIRLEC        * Calcula la nueva direccion del buffer
+    SUB.W   D0,CONTC         * Actualiza el contador de caracteres
+    BEQ     SALIR            * Si no quedan caracteres, se acaba
+    SUB.W   D0,TAME          * Actualiza el tamano de escritura
+    BNE     ESPE             * Si no se ha escrito todo el bloque, se insiste
+    CMP.W   #TAMB,CONTC      * Si el numero de caracteres restantes es menor que el establecido, se transmite ese numero
+    BHI     OTRAE            * Siguiente bloque
+    MOVE.W  CONTC,TAME
+    BRA     ESPE             * Siguiente bloque
+
+SALIR:
+    BRA     BUCPR
+
+FIN:
+    BREAK
+
+BUS_ERROR:
+    BREAK                    * Bus error handler
+    NOP
+
+ADDRESS_ER:
+    BREAK                    * Address error handler
+    NOP
+
+ILLEGAL_IN:
+    BREAK                    * Illegal instruction handler
+    NOP
+
+PRIV_VIOLT:
+    BREAK                    * Priviledge violation handler
+    NOP
 

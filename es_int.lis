@@ -31,7 +31,7 @@
 00000400  =00EFFC19                         31  IVR     EQU     $effc19       * vector de interrupccion de AMBAS
 00000400                                    32      
 00000400                                    33      INIT:
-00000400  207C 000007B2                     34          MOVE.L    #V,A0        * Vector de buffers internos
+00000400  207C 000007C6                     34          MOVE.L    #V,A0        * Vector de buffers internos
 00000406                                    35  
 00000406  20BC 00001000                     36          MOVE.L    #V0,(A0)
 0000040C  217C 000017D8 0004                37          MOVE.L    #V1,4(A0)
@@ -52,10 +52,10 @@
 0000046C  13FC 00CC 00EFFC13                52          MOVE.B    #%11001100,CSRB     * Velocidad = 38400 bps.
 00000474  13FC 0005 00EFFC15                53          MOVE.B    #%00000101,CRB      * Transmision y recepcion activados.
 0000047C                                    54  
-0000047C  13FC 0022 000007C2                55          MOVE.B    #%00100010,IMRCOPY  * Permitir interrupción de recepción
-00000484  13F9 000007C2 00EFFC0B            56          MOVE.B    IMRCOPY,IMR
+0000047C  13FC 0022 000007D6                55          MOVE.B    #%00100010,IMRCOPY  * Permitir interrupción de recepción
+00000484  13F9 000007D6 00EFFC0B            56          MOVE.B    IMRCOPY,IMR
 0000048E                                    57  
-0000048E  21FC 00000674 0100                58          MOVE.L    #RTI,$100           * 256 = 64 * 4
+0000048E  21FC 0000066C 0100                58          MOVE.L    #RTI,$100           * 256 = 64 * 4
 00000496  13FC 0040 00EFFC19                59          MOVE.B    #$40,IVR            * Vector de interrupcion = 64
 0000049E                                    60          
 0000049E                                    61          * MOVE.W    #$2000,SR           * Permite interrupciones
@@ -67,7 +67,7 @@
 000004A0                                    67          * Selección de buffer
 000004A0  C0BC 00000003                     68          AND.L   #$3,D0
 000004A6  E580                              69          ASL.L   #2,D0
-000004A8  207C 000007B2                     70          MOVE.L  #V,A0
+000004A8  207C 000007C6                     70          MOVE.L  #V,A0
 000004AE  2070 0000                         71          MOVE.L  (A0,D0),A0
 000004B2                                    72                  
 000004B2                                    73          *Comprobación de buffer vacío
@@ -93,415 +93,430 @@
 000004DC  4E75                              93          RTS
 000004DE                                    94          
 000004DE                                    95          b_vacio:
-000004DE  303C FFFF                         96              MOVE    #-1,D0
-000004E2  4E75                              97              RTS
-000004E4                                    98  
-000004E4                                    99  *******************************************************************************
-000004E4                                   100  
-000004E4                                   101      ESCCAR:
-000004E4                                   102          * Selección de buffer
-000004E4  C0BC 00000003                    103          AND.L   #$3,D0
-000004EA  E580                             104          ASL.L   #2,D0
-000004EC  307C 07B2                        105          MOVE    #V,A0
-000004F0  2070 0000                        106          MOVE.L  (A0,D0),A0
-000004F4                                   107          
-000004F4                                   108          * Comprobación de buffer lleno
-000004F4  0C68 07D0 0004                   109          CMP     #2000,4(A0)
-000004FA  6700 002C                        110          BEQ     b_lleno
-000004FE                                   111  
-000004FE  3428 0002                        112          MOVE    2(A0),D2
-00000502  1181 2008                        113          MOVE.B  D1,8(A0,D2)
-00000506                                   114          
-00000506                                   115          * Actualización de variables
-00000506  40C7                             116          MOVE    SR,D7                                  * Sección crítica
-00000508  46FC 2700                        117          MOVE    #$2700,SR                              *
-0000050C  5268 0002                        118          ADD     #1,2(A0)                               *
-00000510  5268 0004                        119          ADD     #1,4(A0)                               *
-00000514                                   120                                                         *
-00000514                                   121          *Comprobamos que fin no se pasa de 2000        *
-00000514  0C68 07D0 0002                   122          CMP     #2000,2(A0)                            *
-0000051A  6D00 0008                        123          BLT     modEsc                                 *
-0000051E  0468 07D0 0002                   124          SUB     #2000,2(A0)                            *
-00000524                                   125                                                         *
-00000524                                   126          modEsc:                                        *
-00000524  46C7                             127          MOVE    D7,SR                                  * Fin sección crítica
-00000526  4E75                             128          RTS
-00000528                                   129  
-00000528                                   130          b_lleno:
-00000528  303C FFFF                        131              MOVE    #-1,D0
-0000052C  4E75                             132              RTS
-0000052E                                   133          
-0000052E                                   134  *******************************************************************************
-0000052E                                   135          
-0000052E                                   136      LINEA:        
-0000052E                                   137          * Selección de buffer
-0000052E  E580                             138          ASL.L   #2,D0       * D0 * 4 -> D0
-00000530  207C 000007B2                    139          MOVE.L  #V,A0       * V -> A0
-00000536  2070 0000                        140          MOVE.L  (A0,D0),A0  * M(V+D0*4) -> A0
-0000053A                                   141  
-0000053A                                   142          *Comprobación de buffer vacío
-0000053A  0C68 0000 0004                   143          CMP     #0,4(A0)
-00000540  6700 003E                        144          BEQ     vacLin
-00000544  3210                             145          MOVE    (A0),D1
-00000546                                   146          
-00000546                                   147          *Inicializamos D0,D1,D2
-00000546  7000                             148          MOVE.L  #0,D0
-00000548  40C7                             149          MOVE    SR,D7                                  * Sección crítica
-0000054A  46FC 2700                        150          MOVE    #$2700,SR                              *
-0000054E  3210                             151          MOVE    (A0),D1                                *
-00000550  3428 0004                        152          MOVE    4(A0),D2                               *
-00000554                                   153                                                         *
-00000554                                   154          bucLin:                                        *
-00000554  5240                             155              ADD     #1,D0                              *
-00000556  0C30 000D 1008                   156              CMP.B   #$0d,8(A0,D1)                      *
-0000055C  6700 001C                        157              BEQ     encLin                             *
-00000560  5241                             158              ADD     #1,D1                              *
-00000562  5342                             159              SUB     #1,D2                              *
-00000564                                   160              *Comprobamos que inicio no se pasa de 2000 *
-00000564  B27C 07D0                        161              CMP     #2000,D1                           *
-00000568  6D00 0006                        162              BLT     modLin                             *
-0000056C  0450 07D0                        163              SUB     #2000,(A0)                         *
-00000570                                   164                                                         *
-00000570                                   165              modLin:                                    *
-00000570  B47C 0000                        166              CMP     #0,D2                              *
-00000574  66DE                             167              BNE     bucLin                             *
-00000576                                   168                                                         *
-00000576  303C 0000                        169          MOVE    #0,D0                                  *
-0000057A                                   170                                                         *
-0000057A                                   171          encLin:                                        *
-0000057A  46C7                             172              MOVE    D7,SR                              * Fin sección crítica
-0000057C  6000 000A                        173              BRA     endLin
-00000580                                   174          
-00000580                                   175          vacLin:
-00000580  303C 0000                        176              MOVE    #0,D0
-00000584  6000 0002                        177              BRA     endLin
-00000588                                   178      
-00000588                                   179          endLin:
-00000588  4E75                             180              RTS
-0000058A                                   181  
-0000058A                                   182  *******************************************************************************
-0000058A                                   183  
-0000058A                                   184      SCAN:
-0000058A                                   185          *Comprobación de parámetros
-0000058A  0CAF 00000000 0004               186          CMP.L  #0,4(A7)
-00000592  6D00 005C                        187          BLT    errScan     * Si Buffer < 0, error
-00000596  0C6F 0000 0008                   188          CMP.W  #0,8(A7)
-0000059C  6D00 0052                        189          BLT    errScan     * Si Descriptor < 0, error
-000005A0  0C6F 0001 0008                   190          CMP.W  #1,8(A7)
-000005A6  6E00 0048                        191          BGT    errScan     * Si Descriptor > 1, error
-000005AA  0C6F 0000 000A                   192          CMP    #0,10(A7)
-000005B0  6D00 003E                        193          BLT    errScan     * Si Tamaño < 0, error
-000005B4                                   194          
-000005B4                                   195          *Llamamos a línea
-000005B4  7000                             196          MOVE.L #0,D0
-000005B6  302F 0008                        197          MOVE   8(A7),D0
-000005BA  6100 FF72                        198          BSR    LINEA
-000005BE                                   199  
-000005BE                                   200          *Comprobamos si es una linea de tamaño valido
-000005BE  382F 000A                        201          MOVE     10(A7),D4
-000005C2  B07C 0000                        202          CMP      #0,D0
-000005C6  6700 002C                        203          BEQ      vacScan     * Si D0 = 0, salir
-000005CA  B06F 000A                        204          CMP      10(A7),D0
-000005CE  6E00 0024                        205          BGT      vacScan     * Si D0 > Tamaño, salir
-000005D2  7600                             206          MOVE.L   #0,D3
-000005D4  3400                             207          MOVE     D0,D2
-000005D6                                   208          bucScan:
-000005D6                                   209              *Llamamos a LEECAR
-000005D6  302F 0008                        210              MOVE    8(A7),D0
-000005DA  6100 FEC4                        211              BSR     LEECAR
-000005DE  246F 0004                        212              MOVE.L  4(A7),A2
-000005E2  1580 3000                        213              MOVE.B  D0,(A2,D3)
-000005E6  5243                             214              ADD     #1,D3
-000005E8  B443                             215              CMP     D3,D2
-000005EA  66EA                             216              BNE     bucScan
-000005EC  3002                             217          MOVE    D2,D0
-000005EE  4E75                             218          RTS
-000005F0                                   219  
-000005F0                                   220          errScan:
-000005F0  70FF                             221              MOVE.L #-1,D0
-000005F2  4E75                             222              RTS
-000005F4                                   223  
-000005F4                                   224          vacScan:
-000005F4  303C 0000                        225              MOVE #0,D0
-000005F8  4E75                             226              RTS
-000005FA                                   227  
-000005FA                                   228  *******************************************************************************
-000005FA                                   229  
-000005FA                                   230      PRINT:
-000005FA                                   231          *Comprobación de párametros
-000005FA  0CAF 00000000 0004               232          CMP.L  #0,4(A7)
-00000602  6D00 006C                        233          BLT    errPrint      * Si Buffer < 0, error
-00000606  0C6F 0000 0008                   234          CMP    #0,8(A7)
-0000060C  6D00 0062                        235          BLT    errPrint      * Si Descriptor < 0, error
-00000610  0C6F 0001 0008                   236          CMP    #1,8(A7)
-00000616  6E00 0058                        237          BGT    errPrint      * Si Descriptor > 1, error
-0000061A  0C6F 0000 000A                   238          CMP    #0,10(A7)
-00000620  6D00 004E                        239          BLT    errPrint      * Si Tamaño < 0, error
-00000624                                   240  
-00000624  363C 0000                        241          MOVE   #0,D3
-00000628                                   242          bucPrint:
-00000628                                   243              *Llamamos a ESCCAR
-00000628  246F 0004                        244              MOVE.L 4(A7),A2
-0000062C  1232 3000                        245              MOVE.B (A2,D3),D1
-00000630  302F 0008                        246              MOVE   8(A7),D0
-00000634  5440                             247              ADD    #2,D0
-00000636  6100 FEAC                        248              BSR    ESCCAR
-0000063A  5243                             249              ADD    #1,D3
-0000063C  B66F 000A                        250              CMP    10(A7),D3
-00000640  66E6                             251              BNE    bucPrint
-00000642                                   252  
-00000642                                   253          *Llamamos a LINEA
-00000642  302F 0008                        254          MOVE    8(A7),D0
-00000646  5440                             255          ADD     #2,D0
-00000648  6100 FEE4                        256          BSR     LINEA
-0000064C                                   257          
-0000064C                                   258          *Si hay linea se permiten transmisiones
-0000064C  B07C 0000                        259          CMP     #0,D0
-00000650  6F00 001A                        260          BLE     noLinPrint
-00000654  382F 0008                        261          MOVE    8(A7),D4
-00000658  C8FC 0004                        262          MULU    #4,D4
-0000065C  09F9 000007C2                    263          BSET    D4,IMRCOPY
-00000662  13F9 000007C2 00EFFC0B           264          MOVE.B  IMRCOPY,IMR
-0000066C                                   265  
-0000066C                                   266  
-0000066C                                   267          noLinPrint:
-0000066C  3003                             268              MOVE    D3,D0
-0000066E  4E75                             269              RTS
-00000670                                   270  
-00000670                                   271          errPrint:
-00000670  70FF                             272              MOVE.L #-1,D0
-00000672  4E75                             273              RTS
-00000674                                   274  
-00000674                                   275  *******************************************************************************
-00000674                                   276      RTI:
-00000674  2F08                             277          MOVE.L  A0,-(A7)
-00000676  2F09                             278          MOVE.L  A1,-(A7)
-00000678  2F0A                             279          MOVE.L  A2,-(A7)
-0000067A  2F0B                             280          MOVE.L  A3,-(A7)
-0000067C  2F0C                             281          MOVE.L  A4,-(A7)
-0000067E  2F0D                             282          MOVE.L  A5,-(A7)
-00000680  2F0E                             283          MOVE.L  A6,-(A7)
-00000682  2F00                             284          MOVE.L  D0,-(A7)
-00000684  2F01                             285          MOVE.L  D1,-(A7)
-00000686  2F02                             286          MOVE.L  D2,-(A7)
-00000688  2F03                             287          MOVE.L  D3,-(A7)
-0000068A  2F04                             288          MOVE.L  D4,-(A7)
-0000068C  2F05                             289          MOVE.L  D5,-(A7)
-0000068E  2F06                             290          MOVE.L  D6,-(A7)
-00000690  2F07                             291          MOVE.L  D7,-(A7)
-00000692                                   292  
-00000692                                   293  
-00000692                                   294          * Identificar fuente de interrupción
-00000692  1A39 00EFFC0B                    295          MOVE.B  ISR,D5
-00000698  CA39 000007C2                    296          AND.B   IMRCOPY,D5
-0000069E                                   297  
-0000069E  0805 0001                        298          BTST    #1,D5
-000006A2  6600 001A                        299          BNE     rA_RTI
-000006A6  0805 0005                        300          BTST    #5,D5
-000006AA  6600 0020                        301          BNE     rB_RTI
-000006AE                                   302  
-000006AE  0805 0000                        303          BTST    #0,D5
-000006B2  6600 002E                        304          BNE     tA_RTI
-000006B6  0805 0004                        305          BTST    #4,D5
-000006BA  6600 007E                        306          BNE     tB_RTI
-000006BE                                   307  
-000006BE                                   308          rA_RTI:
-000006BE  303C 0000                        309              MOVE   #0,D0
-000006C2  1239 00EFFC07                    310              MOVE.B RBA,D1
-000006C8  6000 0010                        311              BRA    recRTI
-000006CC                                   312  
-000006CC                                   313          rB_RTI:
-000006CC  303C 0001                        314              MOVE   #1,D0
-000006D0  1239 00EFFC17                    315              MOVE.B RBB,D1
-000006D6  6000 0002                        316              BRA    recRTI
-000006DA                                   317  
-000006DA                                   318          recRTI:
-000006DA  6100 FE08                        319              BSR    ESCCAR
-000006DE  6000 00B2                        320              BRA    endRTI
-000006E2                                   321  
-000006E2                                   322          tA_RTI:
-000006E2  247C 000007B2                    323              MOVE.L #V,A2     * A2 = V
-000006E8  246A 0008                        324              MOVE.L 8(A2),A2  * A2 = M(V+4*2)
-000006EC                                   325  
-000006EC  0C6A 0001 0006                   326              CMP    #1,6(A2)
-000006F2  6600 0026                        327              BNE    tA_no10_RTI   * Si VARIABLEUNIVERSAL = 0, no enviar #10
-000006F6                                   328              
-000006F6                                   329              * Enviar #10 por línea de transmision A
-000006F6  13FC 000A 00EFFC07               330              MOVE.B #10,TBA
-000006FE  357C 0000 0006                   331              MOVE   #0,6(A2)
-00000704  08B9 0000 000007C2               332              BCLR   #0,IMRCOPY
-0000070C  13F9 000007C2 00EFFC0B           333              MOVE.B IMRCOPY,IMR
-00000716  6000 007A                        334              BRA    endRTI
-0000071A                                   335  
-0000071A                                   336              * No enviar #10 por línea de transmision A
-0000071A                                   337              tA_no10_RTI:
-0000071A  303C 0002                        338                  MOVE   #2,D0
-0000071E  6100 FD80                        339                  BSR    LEECAR
-00000722  13C0 00EFFC07                    340                  MOVE.B D0,TBA
-00000728  B07C 000D                        341                  CMP    #13,D0
-0000072C  6600 0064                        342                  BNE    endRTI
-00000730  357C 0001 0006                   343                  MOVE   #1,6(A2) *
-00000736  6000 005A                        344                  BRA    endRTI
-0000073A                                   345  
-0000073A                                   346  
-0000073A                                   347  
-0000073A                                   348  
-0000073A                                   349          tB_RTI:
-0000073A  247C 000007B2                    350              MOVE.L #V,A2       * A2 = V
-00000740  246A 000C                        351              MOVE.L 12(A2),A2   * A2 = M(V+4*3)
-00000744                                   352  
-00000744  0C6A 0001 0006                   353              CMP    #1,6(A2)
-0000074A  6600 0026                        354              BNE    tB_no10_RTI * Si VARIABLEUNIVERSAL = 0, no enviar #10
-0000074E                                   355              
-0000074E                                   356              * Enviar #10 por línea de transmision B
-0000074E  13FC 000A 00EFFC17               357              MOVE.B #10,TBB
-00000756  357C 0000 0006                   358              MOVE   #0,6(A2)
-0000075C  08B9 0004 000007C2               359              BCLR   #4,IMRCOPY
-00000764  13F9 000007C2 00EFFC0B           360              MOVE.B IMRCOPY,IMR
-0000076E  6000 0022                        361              BRA    endRTI
-00000772                                   362  
-00000772                                   363              * No enviar #10 por línea de transmision B
-00000772                                   364              tB_no10_RTI:
-00000772  303C 0003                        365                  MOVE   #3,D0   * Leer del Buffer Interno #3 (transmisión B)
-00000776  6100 FD28                        366                  BSR    LEECAR
-0000077A  13C0 00EFFC17                    367                  MOVE.B D0,TBB  * D0 -> TBB. Transmitir
-00000780  B07C 000D                        368                  CMP    #13,D0  * Si D0=13, VARIABLEUNIVERSAL = 1
-00000784  6600 000C                        369                  BNE    endRTI
-00000788  357C 0001 0006                   370                  MOVE   #1,6(A2)
-0000078E  6000 0002                        371                  BRA    endRTI
-00000792                                   372              
-00000792                                   373          endRTI:
-00000792  2E1F                             374              MOVE.L  (A7)+,D7
-00000794  2C1F                             375              MOVE.L  (A7)+,D6
-00000796  2A1F                             376              MOVE.L  (A7)+,D5
-00000798  281F                             377              MOVE.L  (A7)+,D4
-0000079A  261F                             378              MOVE.L  (A7)+,D3
-0000079C  241F                             379              MOVE.L  (A7)+,D2
-0000079E  221F                             380              MOVE.L  (A7)+,D1
-000007A0  201F                             381              MOVE.L  (A7)+,D0
-000007A2  2C5F                             382              MOVE.L  (A7)+,A6
-000007A4  2A5F                             383              MOVE.L  (A7)+,A5
-000007A6  285F                             384              MOVE.L  (A7)+,A4
-000007A8  265F                             385              MOVE.L  (A7)+,A3
-000007AA  245F                             386              MOVE.L  (A7)+,A2
-000007AC  225F                             387              MOVE.L  (A7)+,A1
-000007AE  205F                             388              MOVE.L  (A7)+,A0
-000007B0                                   389  
-000007B0  4E73                             390              RTE
-000007B2                                   391  
-000007B2                                   392  *******************************************************************************
-000007B2                                   393  *   REGIÓN DE VARIABLES GLOBALES
-000007B2                                   394  ********************************************************************************
-000007B2  00000000 00000000 00000000 ...   395      V:      DC.L   0,0,0,0
-000007C2  00                               396      IMRCOPY:DC.B   0
-000007C3                                   397  
-000007C3                                   398  ********************************************************************************
-000007C3                                   399  *   REGIÓN DE HEAP
-000007C3                                   400  ********************************************************************************
-00001000                                   401      ORG     $1000
-00001000                                   402      
-00001000  0000 0000 0000 0000              403      V0:     DC.W   0,0,0,0
-00001008                                   404              DS.B   TAMANYO
-000017D8  0000 0000 0000 0000              405      V1:     DC.W   0,0,0,0
-000017E0                                   406              DS.B   TAMANYO
-00001FB0  0000 0000 0000 0000              407      V2:     DC.W   0,0,0,0
-00001FB8                                   408              DS.B   TAMANYO
-00002788  0000 0000 0000 0000              409      V3:     DC.W   0,0,0,0
-00002790                                   410              DS.B   TAMANYO
-00002F60                                   411  
-00002F60                                   412  ********************************************************************************
-00002F60                                   413  *   REGIÓN DE PRUEBAS
-00002F60                                   414  ********************************************************************************
-00004000                                   415      ORG     $4000
-00004000                                   416  
-00004000                                   417  BUFFER: DS.B    2100   * Buffer para escritura y lectura de caracteres
-00004834  0000                             418  CONTL:  DC.W    0      * Contador de lineas
-00004836  0000                             419  CONTC:  DC.W    0      * Contador de caracteres
-00004838  00000000                         420  DIRLEC: DC.L    0      * Direccion de lectura para SCAN
-0000483C  00000000                         421  DIRESC: DC.L    0      * Direccion de lectura para PRINT
-00004840  00000000                         422  TAME:   DC.L    0      * Tamano de escritura para print
-00004844  =00000000                        423  DESA:   EQU     0      * Descriptor linea A
-00004844  =00000001                        424  DESB:   EQU     1      * Descriptor linea B
-00004844                                   425  
-00004844  =0000000F                        426  NLIN:   EQU     15     * Numero de lineas a leer
-00004844  =00000064                        427  TAML:   EQU     100    * Tamano de linea para SCAN
-00004844  =00000005                        428  TAMB:   EQU     5      * Tamano de bloque para PRINT
-00004844                                   429      
-00004844                                   430      
-00004844                                   431  INICIO: * Manejadores de excepciones
-00004844  21FC 000048EE 0008               432      MOVE.L  #BUS_ERROR,8     * Bus error handler
-0000484C  21FC 000048F2 000C               433      MOVE.L  #ADDRESS_ER,12   * Address error handler
-00004854  21FC 000048F6 0010               434      MOVE.L  #ILLEGAL_IN,16   * Illegal instruction handler
-0000485C  21FC 000048FA 0020               435      MOVE.L  #PRIV_VIOLT,32   * Privilege Violation handler
-00004864                                   436  
-00004864  6100 BB9A                        437      BSR     INIT
-00004868  46FC 2000                        438      MOVE.W  #$2000,SR        * Permite interrupciones
-0000486C                                   439  
-0000486C                                   440  BUCPR:
-0000486C  31FC 0000 4836                   441      MOVE.W  #0,CONTC         * Inicializa contador de caracteres
-00004872  31FC 000F 4834                   442      MOVE.W  #NLIN,CONTL      * Inicializa contador de lineas
-00004878  21FC 00004000 4838               443      MOVE.L  #BUFFER,DIRLEC   * Direccion de lectura = comienzo del buffer
-00004880                                   444  
-00004880                                   445  OTRAL:
-00004880  3F3C 0064                        446      MOVE.W  #TAML,-(A7)      * Tamano maximo de la linea
-00004884  3F3C 0001                        447      MOVE.W  #DESB,-(A7)      * Puerto A
-00004888  2F38 4838                        448      MOVE.L  DIRLEC,-(A7)     * Direccion de lectura
-0000488C                                   449  
-0000488C                                   450  ESPL:
-0000488C  6100 BCFC                        451      BSR     SCAN
-00004890  B0BC 00000000                    452      CMP.L   #0,D0
-00004896  67F4                             453      BEQ     ESPL             * Si no se ha leido la linea, se intenta de nuevo
-00004898  508F                             454      ADD.L   #8,A7            * Reestablece la pila
-0000489A  D1B8 4838                        455      ADD.L   D0,DIRLEC        * Calcula la nueva direccion de lectura
-0000489E  D178 4836                        456      ADD.W   D0,CONTC         * Actualiza el contador de caracteres
-000048A2                                   457  
-000048A2  5378 4834                        458      SUB.W   #1,CONTL         * Actualiza el numero de lineas leidas.
-000048A6  66D8                             459      BNE     OTRAL            * Si no se han leido todas, se vuelve a leer
-000048A8                                   460  
-000048A8  21FC 00004000 4838               461      MOVE.L  #BUFFER,DIRLEC   * DIreccion de lectura = comienzo del buffer
-000048B0                                   462  
-000048B0                                   463  OTRAE:
-000048B0  31FC 0005 4840                   464      MOVE.W  #TAMB,TAME       * Tamano de escritura = tamano de bloque
-000048B6                                   465  
-000048B6                                   466  ESPE:
-000048B6  3F38 4840                        467      MOVE.W  TAME,-(A7)       * Tamano de escritura
-000048BA  3F3C 0001                        468          MOVE.W  #DESB,-(A7)      * Puerto B
-000048BE  2F38 4838                        469          MOVE.L  DIRLEC,-(A7)     * Direccion de lectura
-000048C2                                   470      * BREAK
-000048C2  6100 BD36                        471      BSR     PRINT
-000048C6  508F                             472      ADD.L   #8,A7            * Reestablece la pila
-000048C8  D1B8 4838                        473      ADD.L   D0,DIRLEC        * Calcula la nueva direccion del buffer
-000048CC  9178 4836                        474      SUB.W   D0,CONTC         * Actualiza el contador de caracteres
-000048D0  6700 0018                        475      BEQ     SALIR            * Si no quedan caracteres, se acaba
-000048D4  9178 4840                        476      SUB.W   D0,TAME          * Actualiza el tamano de escritura
-000048D8  66DC                             477      BNE     ESPE             * Si no se ha escrito todo el bloque, se insiste
-000048DA  0C78 0005 4836                   478      CMP.W   #TAMB,CONTC      * Si el numero de caracteres restantes es menor que el establecido, se transmite ese numero
-000048E0  62CE                             479      BHI     OTRAE            * Siguiente bloque
-000048E2  31F8 4836 4840                   480      MOVE.W  CONTC,TAME
-000048E8  60CC                             481      BRA     ESPE             * Siguiente bloque
-000048EA                                   482  
-000048EA                                   483  SALIR:
-000048EA  6080                             484      BRA     BUCPR
-000048EC                                   485  
-000048EC                                   486  FIN:
-000048EC  4848                             487      BREAK
-000048EE                                   488  
-000048EE                                   489  BUS_ERROR:
-000048EE  4848                             490      BREAK                    * Bus error handler
-000048F0  4E71                             491      NOP
-000048F2                                   492  
-000048F2                                   493  ADDRESS_ER:
-000048F2  4848                             494      BREAK                    * Address error handler
-000048F4  4E71                             495      NOP
-000048F6                                   496  
-000048F6                                   497  ILLEGAL_IN:
-000048F6  4848                             498      BREAK                    * Illegal instruction handler
-000048F8  4E71                             499      NOP
-000048FA                                   500  
-000048FA                                   501  PRIV_VIOLT:
-000048FA  4848                             502      BREAK                    * Priviledge violation handler
-000048FC  4E71                             503      NOP
-000048FE                                   504  
+000004DE  70FF                              96              MOVE.L  #-1,D0
+000004E0  4E75                              97              RTS
+000004E2                                    98  
+000004E2                                    99  *******************************************************************************
+000004E2                                   100  
+000004E2                                   101      ESCCAR:
+000004E2                                   102          * Selección de buffer
+000004E2  C0BC 00000003                    103          AND.L   #$3,D0
+000004E8  E580                             104          ASL.L   #2,D0
+000004EA  307C 07C6                        105          MOVE    #V,A0
+000004EE  2070 0000                        106          MOVE.L  (A0,D0),A0
+000004F2                                   107          
+000004F2                                   108          * Comprobación de buffer lleno
+000004F2  0C68 07D0 0004                   109          CMP     #2000,4(A0)
+000004F8  6700 002C                        110          BEQ     b_lleno
+000004FC                                   111  
+000004FC  3428 0002                        112          MOVE    2(A0),D2
+00000500  1181 2008                        113          MOVE.B  D1,8(A0,D2)
+00000504                                   114          
+00000504                                   115          * Actualización de variables
+00000504  40C7                             116          MOVE    SR,D7                                  * Sección crítica
+00000506  46FC 2700                        117          MOVE    #$2700,SR                              *
+0000050A  5268 0002                        118          ADD     #1,2(A0)                               *
+0000050E  5268 0004                        119          ADD     #1,4(A0)                               *
+00000512                                   120                                                         *
+00000512                                   121          *Comprobamos que fin no se pasa de 2000        *
+00000512  0C68 07D0 0002                   122          CMP     #2000,2(A0)                            *
+00000518  6D00 0008                        123          BLT     modEsc                                 *
+0000051C  0468 07D0 0002                   124          SUB     #2000,2(A0)                            *
+00000522                                   125                                                         *
+00000522                                   126          modEsc:                                        *
+00000522  46C7                             127          MOVE    D7,SR                                  * Fin sección crítica
+00000524  4E75                             128          RTS
+00000526                                   129  
+00000526                                   130          b_lleno:
+00000526  70FF                             131              MOVE.L  #-1,D0
+00000528  4E75                             132              RTS
+0000052A                                   133          
+0000052A                                   134  *******************************************************************************
+0000052A                                   135          
+0000052A                                   136      LINEA:        
+0000052A                                   137          * Selección de buffer
+0000052A  E580                             138          ASL.L   #2,D0       * D0 * 4 -> D0
+0000052C  207C 000007C6                    139          MOVE.L  #V,A0       * V -> A0
+00000532  2070 0000                        140          MOVE.L  (A0,D0),A0  * M(V+D0*4) -> A0
+00000536                                   141  
+00000536                                   142          *Comprobación de buffer vacío
+00000536  0C68 0000 0004                   143          CMP     #0,4(A0)
+0000053C  6700 003C                        144          BEQ     vacLin
+00000540  3210                             145          MOVE    (A0),D1
+00000542                                   146          
+00000542                                   147          *Inicializamos D0,D1,D2
+00000542  7000                             148          MOVE.L  #0,D0
+00000544  40C7                             149          MOVE    SR,D7                                  * Sección crítica
+00000546  46FC 2700                        150          MOVE    #$2700,SR                              *
+0000054A  3210                             151          MOVE    (A0),D1                                *
+0000054C  3428 0004                        152          MOVE    4(A0),D2                               *
+00000550                                   153                                                         *
+00000550                                   154          bucLin:                                        *
+00000550  5240                             155              ADD     #1,D0                              *
+00000552  0C30 000D 1008                   156              CMP.B   #$0d,8(A0,D1)                      *
+00000558  6700 001A                        157              BEQ     encLin                             *
+0000055C  5241                             158              ADD     #1,D1                              *
+0000055E  5342                             159              SUB     #1,D2                              *
+00000560                                   160              *Comprobamos que inicio no se pasa de 2000 *
+00000560  B27C 07D0                        161              CMP     #2000,D1                           *
+00000564  6D00 0006                        162              BLT     modLin                             *
+00000568  323C 0000                        163              MOVE    #0,D1                              *
+0000056C                                   164                                                         *
+0000056C                                   165              modLin:                                    *
+0000056C  B47C 0000                        166              CMP     #0,D2                              *
+00000570  66DE                             167              BNE     bucLin                             *
+00000572                                   168                                                         *
+00000572  7000                             169          MOVE.L  #0,D0                                  *
+00000574                                   170                                                         *
+00000574                                   171          encLin:                                        *
+00000574  46C7                             172              MOVE    D7,SR                              * Fin sección crítica
+00000576  6000 0008                        173              BRA     endLin
+0000057A                                   174          
+0000057A                                   175          vacLin:
+0000057A  7000                             176              MOVE.L  #0,D0
+0000057C  6000 0002                        177              BRA     endLin
+00000580                                   178      
+00000580                                   179          endLin:
+00000580  4E75                             180              RTS
+00000582                                   181  
+00000582                                   182  *******************************************************************************
+00000582                                   183  
+00000582                                   184      SCAN:
+00000582                                   185          *Comprobación de parámetros
+00000582  0CAF 00000000 0004               186          CMP.L  #0,4(A7)
+0000058A  6D00 005C                        187          BLT    errScan     * Si Buffer < 0, error
+0000058E  0C6F 0000 0008                   188          CMP.W  #0,8(A7)
+00000594  6D00 0052                        189          BLT    errScan     * Si Descriptor < 0, error
+00000598  0C6F 0001 0008                   190          CMP.W  #1,8(A7)
+0000059E  6E00 0048                        191          BGT    errScan     * Si Descriptor > 1, error
+000005A2  0C6F 0000 000A                   192          CMP    #0,10(A7)
+000005A8  6D00 003E                        193          BLT    errScan     * Si Tamaño < 0, error
+000005AC                                   194          
+000005AC                                   195          *Llamamos a línea
+000005AC  7000                             196          MOVE.L #0,D0
+000005AE  302F 0008                        197          MOVE   8(A7),D0
+000005B2  6100 FF76                        198          BSR    LINEA
+000005B6                                   199  
+000005B6                                   200          *Comprobamos si es una linea de tamaño valido
+000005B6  382F 000A                        201          MOVE     10(A7),D4
+000005BA  B07C 0000                        202          CMP      #0,D0
+000005BE  6700 002C                        203          BEQ      vacScan     * Si D0 = 0, salir
+000005C2  B06F 000A                        204          CMP      10(A7),D0
+000005C6  6E00 0024                        205          BGT      vacScan     * Si D0 > Tamaño, salir
+000005CA  7600                             206          MOVE.L   #0,D3
+000005CC  3400                             207          MOVE     D0,D2
+000005CE                                   208          bucScan:
+000005CE                                   209              *Llamamos a LEECAR
+000005CE  302F 0008                        210              MOVE    8(A7),D0
+000005D2  6100 FECC                        211              BSR     LEECAR
+000005D6  246F 0004                        212              MOVE.L  4(A7),A2
+000005DA  1580 3000                        213              MOVE.B  D0,(A2,D3)
+000005DE  5243                             214              ADD     #1,D3
+000005E0  B443                             215              CMP     D3,D2
+000005E2  66EA                             216              BNE     bucScan
+000005E4  3002                             217          MOVE    D2,D0
+000005E6  4E75                             218          RTS
+000005E8                                   219  
+000005E8                                   220          errScan:
+000005E8  70FF                             221              MOVE.L #-1,D0
+000005EA  4E75                             222              RTS
+000005EC                                   223  
+000005EC                                   224          vacScan:
+000005EC  303C 0000                        225              MOVE #0,D0
+000005F0  4E75                             226              RTS
+000005F2                                   227  
+000005F2                                   228  *******************************************************************************
+000005F2                                   229  
+000005F2                                   230      PRINT:
+000005F2                                   231          *Comprobación de párametros
+000005F2  0CAF 00000000 0004               232          CMP.L  #0,4(A7)
+000005FA  6D00 006C                        233          BLT    errPrint      * Si Buffer < 0, error
+000005FE  0C6F 0000 0008                   234          CMP    #0,8(A7)
+00000604  6D00 0062                        235          BLT    errPrint      * Si Descriptor < 0, error
+00000608  0C6F 0001 0008                   236          CMP    #1,8(A7)
+0000060E  6E00 0058                        237          BGT    errPrint      * Si Descriptor > 1, error
+00000612  0C6F 0000 000A                   238          CMP    #0,10(A7)
+00000618  6D00 004E                        239          BLT    errPrint      * Si Tamaño < 0, error
+0000061C                                   240  
+0000061C  363C 0000                        241          MOVE   #0,D3
+00000620                                   242          bucPrint:
+00000620                                   243              *Llamamos a ESCCAR
+00000620  246F 0004                        244              MOVE.L 4(A7),A2
+00000624  1232 3000                        245              MOVE.B (A2,D3),D1
+00000628  302F 0008                        246              MOVE   8(A7),D0
+0000062C  5440                             247              ADD    #2,D0
+0000062E  6100 FEB2                        248              BSR    ESCCAR
+00000632  5243                             249              ADD    #1,D3
+00000634  B66F 000A                        250              CMP    10(A7),D3
+00000638  66E6                             251              BNE    bucPrint
+0000063A                                   252  
+0000063A                                   253          *Llamamos a LINEA
+0000063A  302F 0008                        254          MOVE    8(A7),D0
+0000063E  5440                             255          ADD     #2,D0
+00000640  6100 FEE8                        256          BSR     LINEA
+00000644                                   257          
+00000644                                   258          *Si hay linea se permiten transmisiones
+00000644  B07C 0000                        259          CMP     #0,D0
+00000648  6F00 001A                        260          BLE     noLinPrint
+0000064C  382F 0008                        261          MOVE    8(A7),D4
+00000650  C8FC 0004                        262          MULU    #4,D4
+00000654  09F9 000007D6                    263          BSET    D4,IMRCOPY
+0000065A  13F9 000007D6 00EFFC0B           264          MOVE.B  IMRCOPY,IMR
+00000664                                   265  
+00000664                                   266  
+00000664                                   267          noLinPrint:
+00000664  3003                             268              MOVE    D3,D0
+00000666  4E75                             269              RTS
+00000668                                   270  
+00000668                                   271          errPrint:
+00000668  70FF                             272              MOVE.L #-1,D0
+0000066A  4E75                             273              RTS
+0000066C                                   274  
+0000066C                                   275  *******************************************************************************
+0000066C                                   276      RTI:
+0000066C  2F08                             277          MOVE.L  A0,-(A7)
+0000066E  2F09                             278          MOVE.L  A1,-(A7)
+00000670  2F0A                             279          MOVE.L  A2,-(A7)
+00000672  2F0B                             280          MOVE.L  A3,-(A7)
+00000674  2F0C                             281          MOVE.L  A4,-(A7)
+00000676  2F0D                             282          MOVE.L  A5,-(A7)
+00000678  2F0E                             283          MOVE.L  A6,-(A7)
+0000067A  2F00                             284          MOVE.L  D0,-(A7)
+0000067C  2F01                             285          MOVE.L  D1,-(A7)
+0000067E  2F02                             286          MOVE.L  D2,-(A7)
+00000680  2F03                             287          MOVE.L  D3,-(A7)
+00000682  2F04                             288          MOVE.L  D4,-(A7)
+00000684  2F05                             289          MOVE.L  D5,-(A7)
+00000686  2F06                             290          MOVE.L  D6,-(A7)
+00000688  2F07                             291          MOVE.L  D7,-(A7)
+0000068A                                   292  
+0000068A                                   293  
+0000068A                                   294          * Identificar fuente de interrupción
+0000068A  1A39 00EFFC0B                    295          MOVE.B  ISR,D5
+00000690  CA39 000007D6                    296          AND.B   IMRCOPY,D5
+00000696                                   297  
+00000696  0805 0001                        298          BTST    #1,D5
+0000069A  6600 001A                        299          BNE     rA_RTI
+0000069E  0805 0005                        300          BTST    #5,D5
+000006A2  6600 0020                        301          BNE     rB_RTI
+000006A6                                   302  
+000006A6  0805 0000                        303          BTST    #0,D5
+000006AA  6600 002E                        304          BNE     tA_RTI
+000006AE  0805 0004                        305          BTST    #4,D5
+000006B2  6600 008C                        306          BNE     tB_RTI
+000006B6                                   307  
+000006B6                                   308          rA_RTI:
+000006B6  303C 0000                        309              MOVE   #0,D0
+000006BA  1239 00EFFC07                    310              MOVE.B RBA,D1
+000006C0  6000 0010                        311              BRA    recRTI
+000006C4                                   312  
+000006C4                                   313          rB_RTI:
+000006C4  303C 0001                        314              MOVE   #1,D0
+000006C8  1239 00EFFC17                    315              MOVE.B RBB,D1
+000006CE  6000 0002                        316              BRA    recRTI
+000006D2                                   317  
+000006D2                                   318          recRTI:
+000006D2  6100 FE0E                        319              BSR    ESCCAR
+000006D6  6000 00CE                        320              BRA    endRTI
+000006DA                                   321  
+000006DA                                   322          tA_RTI:
+000006DA  247C 000007C6                    323              MOVE.L #V,A2     * A2 = V
+000006E0  246A 0008                        324              MOVE.L 8(A2),A2  * A2 = M(V+4*2)
+000006E4                                   325  
+000006E4  0C6A 0001 0006                   326              CMP    #1,6(A2)
+000006EA  6600 0034                        327              BNE    tA_no10_RTI   * Si VARIABLEUNIVERSAL = 0, no enviar #10
+000006EE                                   328              
+000006EE                                   329              * Enviar #10 por línea de transmision A
+000006EE  13FC 000A 00EFFC07               330              MOVE.B #10,TBA
+000006F6  357C 0000 0006                   331              MOVE   #0,6(A2)
+000006FC                                   332              
+000006FC                                   333              * Comprobar si hay más líneas
+000006FC  7002                             334              MOVE.L #2,D0
+000006FE  6100 FE2A                        335              BSR    LINEA
+00000702                                   336  
+00000702  B07C 0000                        337              CMP    #0,D0
+00000706  6600 009E                        338              BNE    endRTI      * Si LINEA no retorna 0, hay líneas, no inhibir
+0000070A  08B9 0000 000007D6               339              BCLR   #0,IMRCOPY
+00000712  13F9 000007D6 00EFFC0B           340              MOVE.B IMRCOPY,IMR
+0000071C  6000 0088                        341              BRA    endRTI
+00000720                                   342  
+00000720                                   343              * No enviar #10 por línea de transmision A
+00000720                                   344              tA_no10_RTI:
+00000720  303C 0002                        345                  MOVE   #2,D0
+00000724  6100 FD7A                        346                  BSR    LEECAR
+00000728  13C0 00EFFC07                    347                  MOVE.B D0,TBA
+0000072E  B07C 000D                        348                  CMP    #13,D0
+00000732  6600 0072                        349                  BNE    endRTI
+00000736  357C 0001 0006                   350                  MOVE   #1,6(A2) *
+0000073C  6000 0068                        351                  BRA    endRTI
+00000740                                   352  
+00000740                                   353  
+00000740                                   354  
+00000740                                   355  
+00000740                                   356          tB_RTI:
+00000740  247C 000007C6                    357              MOVE.L #V,A2       * A2 = V
+00000746  246A 000C                        358              MOVE.L 12(A2),A2   * A2 = M(V+4*3)
+0000074A                                   359  
+0000074A  0C6A 0001 0006                   360              CMP    #1,6(A2)
+00000750  6600 0034                        361              BNE    tB_no10_RTI * Si VARIABLEUNIVERSAL = 0, no enviar #10
+00000754                                   362              
+00000754                                   363              * Enviar #10 por línea de transmision B
+00000754  13FC 000A 00EFFC17               364              MOVE.B #10,TBB
+0000075C  357C 0000 0006                   365              MOVE   #0,6(A2)
+00000762                                   366  
+00000762                                   367              * Comprobar si hay más líneas
+00000762  7003                             368              MOVE.L #3,D0
+00000764  6100 FDC4                        369              BSR    LINEA
+00000768                                   370  
+00000768  B07C 0000                        371              CMP    #0,D0
+0000076C  6600 0038                        372              BNE    endRTI      * Si LINEA no retorna 0, hay líneas, no inhibir
+00000770                                   373  
+00000770  08B9 0004 000007D6               374              BCLR   #4,IMRCOPY
+00000778  13F9 000007D6 00EFFC0B           375              MOVE.B IMRCOPY,IMR
+00000782  6000 0022                        376              BRA    endRTI
+00000786                                   377  
+00000786                                   378              * No enviar #10 por línea de transmision B
+00000786                                   379              tB_no10_RTI:
+00000786  303C 0003                        380                  MOVE   #3,D0   * Leer del Buffer Interno #3 (transmisión B)
+0000078A  6100 FD14                        381                  BSR    LEECAR
+0000078E  13C0 00EFFC17                    382                  MOVE.B D0,TBB  * D0 -> TBB. Transmitir
+00000794  B07C 000D                        383                  CMP    #13,D0  * Si D0=13, VARIABLEUNIVERSAL = 1
+00000798  6600 000C                        384                  BNE    endRTI
+0000079C  357C 0001 0006                   385                  MOVE   #1,6(A2)
+000007A2  6000 0002                        386                  BRA    endRTI
+000007A6                                   387              
+000007A6                                   388          endRTI:
+000007A6  2E1F                             389              MOVE.L  (A7)+,D7
+000007A8  2C1F                             390              MOVE.L  (A7)+,D6
+000007AA  2A1F                             391              MOVE.L  (A7)+,D5
+000007AC  281F                             392              MOVE.L  (A7)+,D4
+000007AE  261F                             393              MOVE.L  (A7)+,D3
+000007B0  241F                             394              MOVE.L  (A7)+,D2
+000007B2  221F                             395              MOVE.L  (A7)+,D1
+000007B4  201F                             396              MOVE.L  (A7)+,D0
+000007B6  2C5F                             397              MOVE.L  (A7)+,A6
+000007B8  2A5F                             398              MOVE.L  (A7)+,A5
+000007BA  285F                             399              MOVE.L  (A7)+,A4
+000007BC  265F                             400              MOVE.L  (A7)+,A3
+000007BE  245F                             401              MOVE.L  (A7)+,A2
+000007C0  225F                             402              MOVE.L  (A7)+,A1
+000007C2  205F                             403              MOVE.L  (A7)+,A0
+000007C4                                   404  
+000007C4  4E73                             405              RTE
+000007C6                                   406  
+000007C6                                   407  *******************************************************************************
+000007C6                                   408  *   REGIÓN DE VARIABLES GLOBALES
+000007C6                                   409  ********************************************************************************
+000007C6  00000000 00000000 00000000 ...   410      V:      DC.L   0,0,0,0
+000007D6  00                               411      IMRCOPY:DC.B   0
+000007D7                                   412  
+000007D7                                   413  ********************************************************************************
+000007D7                                   414  *   REGIÓN DE HEAP
+000007D7                                   415  ********************************************************************************
+00001000                                   416      ORG     $1000
+00001000                                   417      
+00001000  0000 0000 0000 0000              418      V0:     DC.W   0,0,0,0
+00001008                                   419              DS.B   TAMANYO
+000017D8  0000 0000 0000 0000              420      V1:     DC.W   0,0,0,0
+000017E0                                   421              DS.B   TAMANYO
+00001FB0  0000 0000 0000 0000              422      V2:     DC.W   0,0,0,0
+00001FB8                                   423              DS.B   TAMANYO
+00002788  0000 0000 0000 0000              424      V3:     DC.W   0,0,0,0
+00002790                                   425              DS.B   TAMANYO
+00002F60                                   426  
+00002F60                                   427  ********************************************************************************
+00002F60                                   428  *   REGIÓN DE PRUEBAS
+00002F60                                   429  ********************************************************************************
+00004000                                   430      ORG     $4000
+00004000                                   431  
+00004000                                   432  BUFFER: DS.B    2100   * Buffer para escritura y lectura de caracteres
+00004834  0000                             433  CONTL:  DC.W    0      * Contador de lineas
+00004836  0000                             434  CONTC:  DC.W    0      * Contador de caracteres
+00004838  00000000                         435  DIRLEC: DC.L    0      * Direccion de lectura para SCAN
+0000483C  00000000                         436  DIRESC: DC.L    0      * Direccion de lectura para PRINT
+00004840  00000000                         437  TAME:   DC.L    0      * Tamano de escritura para print
+00004844  =00000000                        438  DESA:   EQU     0      * Descriptor linea A
+00004844  =00000001                        439  DESB:   EQU     1      * Descriptor linea B
+00004844                                   440  
+00004844  =0000000F                        441  NLIN:   EQU     15     * Numero de lineas a leer
+00004844  =00000064                        442  TAML:   EQU     100    * Tamano de linea para SCAN
+00004844  =00000005                        443  TAMB:   EQU     5      * Tamano de bloque para PRINT
+00004844                                   444      
+00004844                                   445      
+00004844                                   446  INICIO: * Manejadores de excepciones
+00004844  21FC 000048EE 0008               447      MOVE.L  #BUS_ERROR,8     * Bus error handler
+0000484C  21FC 000048F2 000C               448      MOVE.L  #ADDRESS_ER,12   * Address error handler
+00004854  21FC 000048F6 0010               449      MOVE.L  #ILLEGAL_IN,16   * Illegal instruction handler
+0000485C  21FC 000048FA 0020               450      MOVE.L  #PRIV_VIOLT,32   * Privilege Violation handler
+00004864                                   451  
+00004864  6100 BB9A                        452      BSR     INIT
+00004868  46FC 2000                        453      MOVE.W  #$2000,SR        * Permite interrupciones
+0000486C                                   454  
+0000486C                                   455  BUCPR:
+0000486C  31FC 0000 4836                   456      MOVE.W  #0,CONTC         * Inicializa contador de caracteres
+00004872  31FC 000F 4834                   457      MOVE.W  #NLIN,CONTL      * Inicializa contador de lineas
+00004878  21FC 00004000 4838               458      MOVE.L  #BUFFER,DIRLEC   * Direccion de lectura = comienzo del buffer
+00004880                                   459  
+00004880                                   460  OTRAL:
+00004880  3F3C 0064                        461      MOVE.W  #TAML,-(A7)      * Tamano maximo de la linea
+00004884  3F3C 0000                        462      MOVE.W  #DESA,-(A7)      * Puerto A
+00004888  2F38 4838                        463      MOVE.L  DIRLEC,-(A7)     * Direccion de lectura
+0000488C                                   464  
+0000488C                                   465  ESPL:
+0000488C  6100 BCF4                        466      BSR     SCAN
+00004890  B0BC 00000000                    467      CMP.L   #0,D0
+00004896  67F4                             468      BEQ     ESPL             * Si no se ha leido la linea, se intenta de nuevo
+00004898  508F                             469      ADD.L   #8,A7            * Reestablece la pila
+0000489A  D1B8 4838                        470      ADD.L   D0,DIRLEC        * Calcula la nueva direccion de lectura
+0000489E  D178 4836                        471      ADD.W   D0,CONTC         * Actualiza el contador de caracteres
+000048A2                                   472  
+000048A2  5378 4834                        473      SUB.W   #1,CONTL         * Actualiza el numero de lineas leidas.
+000048A6  66D8                             474      BNE     OTRAL            * Si no se han leido todas, se vuelve a leer
+000048A8                                   475  
+000048A8  21FC 00004000 4838               476      MOVE.L  #BUFFER,DIRLEC   * DIreccion de lectura = comienzo del buffer
+000048B0                                   477  
+000048B0                                   478  OTRAE:
+000048B0  31FC 0005 4840                   479      MOVE.W  #TAMB,TAME       * Tamano de escritura = tamano de bloque
+000048B6                                   480  
+000048B6                                   481  ESPE:
+000048B6  3F38 4840                        482      MOVE.W  TAME,-(A7)       * Tamano de escritura
+000048BA  3F3C 0000                        483          MOVE.W  #DESA,-(A7)      * Puerto B
+000048BE  2F38 4838                        484          MOVE.L  DIRLEC,-(A7)     * Direccion de lectura
+000048C2                                   485      * BREAK
+000048C2  6100 BD2E                        486      BSR     PRINT
+000048C6  508F                             487      ADD.L   #8,A7            * Reestablece la pila
+000048C8  D1B8 4838                        488      ADD.L   D0,DIRLEC        * Calcula la nueva direccion del buffer
+000048CC  9178 4836                        489      SUB.W   D0,CONTC         * Actualiza el contador de caracteres
+000048D0  6700 0018                        490      BEQ     SALIR            * Si no quedan caracteres, se acaba
+000048D4  9178 4840                        491      SUB.W   D0,TAME          * Actualiza el tamano de escritura
+000048D8  66DC                             492      BNE     ESPE             * Si no se ha escrito todo el bloque, se insiste
+000048DA  0C78 0005 4836                   493      CMP.W   #TAMB,CONTC      * Si el numero de caracteres restantes es menor que el establecido, se transmite ese numero
+000048E0  62CE                             494      BHI     OTRAE            * Siguiente bloque
+000048E2  31F8 4836 4840                   495      MOVE.W  CONTC,TAME
+000048E8  60CC                             496      BRA     ESPE             * Siguiente bloque
+000048EA                                   497  
+000048EA                                   498  SALIR:
+000048EA  6080                             499      BRA     BUCPR
+000048EC                                   500  
+000048EC                                   501  FIN:
+000048EC  4848                             502      BREAK
+000048EE                                   503  
+000048EE                                   504  BUS_ERROR:
+000048EE  4848                             505      BREAK                    * Bus error handler
+000048F0  4E71                             506      NOP
+000048F2                                   507  
+000048F2                                   508  ADDRESS_ER:
+000048F2  4848                             509      BREAK                    * Address error handler
+000048F4  4E71                             510      NOP
+000048F6                                   511  
+000048F6                                   512  ILLEGAL_IN:
+000048F6  4848                             513      BREAK                    * Illegal instruction handler
+000048F8  4E71                             514      NOP
+000048FA                                   515  
+000048FA                                   516  PRIV_VIOLT:
+000048FA  4848                             517      BREAK                    * Priviledge violation handler
+000048FC  4E71                             518      NOP
+000048FE                                   519  
 
 No errors detected
 No warnings generated
