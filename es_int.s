@@ -145,31 +145,32 @@ IVR     EQU     $effc19       * vector de interrupccion de AMBAS
         MOVE    (A0),D1
         
         *Inicializamos D0,D1,D2
-        MOVE.L  #0,D0
-        MOVE    SR,D7                                  * Sección crítica
-        MOVE    #$2700,SR                              *
-        MOVE    (A0),D1                                *
-        MOVE    4(A0),D2                               *
-                                                       *
-        bucLin:                                        *
-            ADD     #1,D0                              *
-            CMP.B   #$0d,8(A0,D1)                      *
-            BEQ     encLin                             *
-            ADD     #1,D1                              *
-            SUB     #1,D2                              *
-            *Comprobamos que inicio no se pasa de 2000 *
-            CMP     #2000,D1                           *
-            BLT     modLin                             *
-            MOVE    #0,D1                              *
-                                                       *
-            modLin:                                    *
-            CMP     #0,D2                              *
-            BNE     bucLin                             *
-                                                       *
-        MOVE.L  #0,D0                                  *
-                                                       *
-        encLin:                                        *
-            MOVE    D7,SR                              * Fin sección crítica
+        MOVE.L  #0,D0         * D0 = contador de caraacteres
+        * MOVE    SR,D7                                  * Sección crítica
+        * MOVE    #$2700,SR                              *
+        MOVE    (A0),D1       * D1 = puntero. Inicializado a inicio
+        MOVE    2(A0),D2      * D2 = fin
+       
+        bucLin:
+		    CMP     D1,D2    * Si se ha llegado al final, significa que no se ha encontrado linea
+			BEQ     vacLin   * Saltar a vacLin
+
+            ADD     #1,D0
+
+            CMP.B   #$0d,8(A0,D1)     * Si se ha encontrado salto de línea
+            BEQ     encLin            * Saltar a encLin
+
+            ADD     #1,D1    * Avanzar puntero
+
+            CMP     #2000,D1 * puntero = puntero % 2000
+            BLT     modLin   * puntero = puntero % 2000
+            MOVE    #0,D1    * puntero = puntero % 2000
+
+            modLin:
+            BRA     bucLin
+
+
+        encLin:
             BRA     endLin
         
         vacLin:
