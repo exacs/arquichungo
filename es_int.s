@@ -78,18 +78,18 @@ IVR     EQU     $effc19       * vector de interrupccion de AMBAS
         MOVE.B  8(A0,D1),D0
         
         *Actualización de variables
-        MOVE    SR,D7                                  * Sección crítica
-        MOVE    #$2700,SR                              *
-        ADD     #1,(A0)                                *
-        SUB     #1,4(A0)                               *
-                                                       *
-        *Comprobamos que inicio no se pasa de 2000     *
-        CMP     #2000,(A0)                             *
-        BLT     modLee                                 *
-        SUB     #2000,(A0)                             *
-                                                       *
-        modLee:                                        *
+        ADD     #1,(A0)      * Incrementa "inicio"
+        MOVE    SR,D7                                  * Inicio seccion crítica
+        MOVE    #$2700,SR                              * Inicio seccion critica
+        SUB     #1,4(A0)     * Decrementa "tamanyo"    *
         MOVE    D7,SR                                  * Fin sección crítica
+
+        *Comprobamos que inicio no se pasa de 2000 
+        CMP     #2000,(A0)
+        BLT     modLee
+        SUB     #2000,(A0)
+
+        modLee:
         RTS
         
         b_vacio:
@@ -113,18 +113,18 @@ IVR     EQU     $effc19       * vector de interrupccion de AMBAS
         MOVE.B  D1,8(A0,D2)
         
         * Actualización de variables
-        MOVE    SR,D7                                  * Sección crítica
-        MOVE    #$2700,SR                              *
-        ADD     #1,2(A0)                               *
-        ADD     #1,4(A0)                               *
-                                                       *
-        *Comprobamos que fin no se pasa de 2000        *
-        CMP     #2000,2(A0)                            *
-        BLT     modEsc                                 *
-        SUB     #2000,2(A0)                            *
-                                                       *
-        modEsc:                                        *
+        ADD     #1,2(A0)   * Incrementar "fin"         
+        MOVE    SR,D7                                  * Inicio Sección crítica
+        MOVE    #$2700,SR                              * Inicio Sección crítica
+        ADD     #1,4(A0)   * Incrementar "tamano"      *
         MOVE    D7,SR                                  * Fin sección crítica
+                                                       
+        *Comprobamos que fin no se pasa de 2000        
+        CMP     #2000,2(A0)                            
+        BLT     modEsc                                 
+        SUB     #2000,2(A0)                            
+                                                       
+        modEsc:                                        
         RTS
 
         b_lleno:
@@ -416,7 +416,7 @@ IVR     EQU     $effc19       * vector de interrupccion de AMBAS
 *   REGIÓN DE HEAP
 ********************************************************************************
     ORG     $1000
-    
+
     V0:     DC.W   0,0,0,0
             DS.B   TAMANYO
     V1:     DC.W   0,0,0,0
