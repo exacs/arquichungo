@@ -78,18 +78,18 @@ IVR     EQU     $effc19       * vector de interrupccion de AMBAS
         MOVE.B  8(A0,D1),D0
         
         *Actualización de variables
-        MOVE    SR,D7                                  * Sección crítica
-        MOVE    #$2700,SR                              *
-        ADD     #1,(A0)                                *
-        SUB     #1,4(A0)                               *
-                                                       *
-        *Comprobamos que inicio no se pasa de 2000     *
-        CMP     #2000,(A0)                             *
-        BLT     modLee                                 *
-        SUB     #2000,(A0)                             *
-                                                       *
-        modLee:                                        *
+        ADD     #1,(A0)      * Incrementa "inicio"
+        MOVE    SR,D7                                  * Inicio seccion crítica
+        MOVE    #$2700,SR                              * Inicio seccion critica
+        SUB     #1,4(A0)     * Decrementa "tamanyo"    *
         MOVE    D7,SR                                  * Fin sección crítica
+
+        *Comprobamos que inicio no se pasa de 2000 
+        CMP     #2000,(A0)
+        BLT     modLee
+        SUB     #2000,(A0)
+
+        modLee:
         RTS
         
         b_vacio:
@@ -113,18 +113,18 @@ IVR     EQU     $effc19       * vector de interrupccion de AMBAS
         MOVE.B  D1,8(A0,D2)
         
         * Actualización de variables
-        MOVE    SR,D7                                  * Sección crítica
-        MOVE    #$2700,SR                              *
-        ADD     #1,2(A0)                               *
-        ADD     #1,4(A0)                               *
-                                                       *
-        *Comprobamos que fin no se pasa de 2000        *
-        CMP     #2000,2(A0)                            *
-        BLT     modEsc                                 *
-        SUB     #2000,2(A0)                            *
-                                                       *
-        modEsc:                                        *
+        ADD     #1,2(A0)   * Incrementar "fin"         
+        MOVE    SR,D7                                  * Inicio Sección crítica
+        MOVE    #$2700,SR                              * Inicio Sección crítica
+        ADD     #1,4(A0)   * Incrementar "tamano"      *
         MOVE    D7,SR                                  * Fin sección crítica
+                                                       
+        *Comprobamos que fin no se pasa de 2000        
+        CMP     #2000,2(A0)                            
+        BLT     modEsc                                 
+        SUB     #2000,2(A0)                            
+                                                       
+        modEsc:                                        
         RTS
 
         b_lleno:
@@ -145,31 +145,32 @@ IVR     EQU     $effc19       * vector de interrupccion de AMBAS
         MOVE    (A0),D1
         
         *Inicializamos D0,D1,D2
-        MOVE.L  #0,D0
-        MOVE    SR,D7                                  * Sección crítica
-        MOVE    #$2700,SR                              *
-        MOVE    (A0),D1                                *
-        MOVE    4(A0),D2                               *
-                                                       *
-        bucLin:                                        *
-            ADD     #1,D0                              *
-            CMP.B   #$0d,8(A0,D1)                      *
-            BEQ     encLin                             *
-            ADD     #1,D1                              *
-            SUB     #1,D2                              *
-            *Comprobamos que inicio no se pasa de 2000 *
-            CMP     #2000,D1                           *
-            BLT     modLin                             *
-            MOVE    #0,D1                              *
-                                                       *
-            modLin:                                    *
-            CMP     #0,D2                              *
-            BNE     bucLin                             *
-                                                       *
-        MOVE.L  #0,D0                                  *
-                                                       *
-        encLin:                                        *
-            MOVE    D7,SR                              * Fin sección crítica
+        MOVE.L  #0,D0         * D0 = contador de caraacteres
+        * MOVE    SR,D7                                  * Sección crítica
+        * MOVE    #$2700,SR                              *
+        MOVE    (A0),D1       * D1 = puntero. Inicializado a inicio
+        MOVE    2(A0),D2      * D2 = fin
+       
+        bucLin:
+		    CMP     D1,D2    * Si se ha llegado al final, significa que no se ha encontrado linea
+			BEQ     vacLin   * Saltar a vacLin
+
+            ADD     #1,D0
+
+            CMP.B   #$0d,8(A0,D1)     * Si se ha encontrado salto de línea
+            BEQ     encLin            * Saltar a encLin
+
+            ADD     #1,D1    * Avanzar puntero
+
+            CMP     #2000,D1 * puntero = puntero % 2000
+            BLT     modLin   * puntero = puntero % 2000
+            MOVE    #0,D1    * puntero = puntero % 2000
+
+            modLin:
+            BRA     bucLin
+
+
+        encLin:
             BRA     endLin
         
         vacLin:
@@ -416,7 +417,8 @@ IVR     EQU     $effc19       * vector de interrupccion de AMBAS
 *   REGIÓN DE HEAP
 ********************************************************************************
     ORG     $1000
-    
+
+*
     V0:     DC.W   0,0,0,0
             DS.B   TAMANYO
     V1:     DC.W   0,0,0,0
@@ -461,7 +463,7 @@ BUCPR:
 
 OTRAL:
     MOVE.W  #TAML,-(A7)      * Tamano maximo de la linea
-    MOVE.W  #DESA,-(A7)      * Puerto A
+    MOVE.W  #DESB,-(A7)      * Puerto A
     MOVE.L  DIRLEC,-(A7)     * Direccion de lectura
 
 ESPL:
@@ -518,4 +520,3 @@ ILLEGAL_IN:
 PRIV_VIOLT:
     BREAK                    * Priviledge violation handler
     NOP
-
